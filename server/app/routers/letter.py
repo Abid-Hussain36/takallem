@@ -20,19 +20,9 @@ async def check_pronounciation(
     return await service.check_pronounciation(user_audio, word)
 
 
-@letter_router.post("/pronounciation/check-test")
-async def check_pronounciation(
-    user_audio: UploadFile = File(...),
-    word: str = Form(...),
-    service: PronounciationService = Depends(get_pronounciation_service)
-):
+@letter_router.post("/pronounciation/explain", response_model=LetterPronounciationExplainResponse)
+async def explain_pronounciation(input: LetterPronounciationExplainInput, service: PronounciationService = Depends(get_pronounciation_service)):
     """
-        Takes in a user's recording of pronouncing a particular word and the word itself 
-        and returns feedback on the user's attempt
+        Takes in a pronounciation reflection and a user query and answers the query based on the reflection
     """
-    await service.check_pronounciation_test(user_audio, word)
-
-
-@letter_router.get("/health-check")
-def test_letter():
-    return "Letter router running"
+    return await service.explain_pronounciation(input)
