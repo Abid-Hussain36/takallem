@@ -1,0 +1,30 @@
+# Core FastAPI and Server
+fastapi==0.115.0
+uvicorn[standard]==0.30.6
+python-multipart==0.0.12
+python-dotenv==1.0.1
+
+# Pydantic for data validation (V2 focus)
+pydantic==2.9.2
+pydantic-settings==2.5.2
+
+# Database - Supabase & Postgrest
+supabase==2.10.0
+postgrest==0.18.0
+
+# LangChain and LangGraph (v0.3 ecosystem)
+langchain==0.3.0
+langchain-community==0.3.0
+langchain-openai==0.2.0
+langgraph==0.2.20
+
+# Additional LangChain dependencies
+langsmith==0.1.125
+openai==1.47.0
+
+# HTTP requests
+httpx==0.27.2
+aiohttp==3.10.5
+
+# Utils
+pydub==0.25.1
