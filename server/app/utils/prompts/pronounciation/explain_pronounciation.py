@@ -27,7 +27,7 @@ def build_explain_pronounciation_messages(
 
     Rules:
     - feedback must be a string that answers the user's query regarding their pronounciation and/or the Arabic language
-    - ensure that feedback is provided in English
+    - ensure that feedback is provided primarily in English
     """.strip()
 
     user_content = f"""Given the following data on the user's question and their pronounciation, answer their question:

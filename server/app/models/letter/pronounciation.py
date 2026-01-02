@@ -1,6 +1,7 @@
 from typing import Literal, List
 from pydantic import BaseModel
 
+
 class LetterPronounciationResponse(BaseModel):
     status: Literal["pass", "fail"]
     transcription: str

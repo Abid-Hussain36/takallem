@@ -1,7 +1,9 @@
 from fastapi import APIRouter, UploadFile, File, Form, Depends
 from app.models.letter.pronounciation import LetterPronounciationResponse, LetterPronounciationExplainInput, LetterPronounciationExplainResponse
-from app.services.letter_service import PronounciationService
-from app.utils.di import get_pronounciation_service
+from app.services.letter.pronounciation_service import PronounciationService
+from app.utils.di import get_pronounciation_service, get_writing_service
+from app.models.letter.writing import LetterWritingResponse
+from app.services.letter.writing_service import WritingService
 
 
 letter_router = APIRouter()
@@ -26,3 +28,14 @@ async def explain_pronounciation(input: LetterPronounciationExplainInput, servic
         Takes in a pronounciation reflection and a user query and answers the query based on the reflection
     """
     return await service.explain_pronounciation(input)
+
+
+@letter_router.post("/writing/alphabet", response_model=LetterWritingResponse)
+async def check_letter_writing(
+    user_image: UploadFile, 
+    target_image: UploadFile, 
+    letter: str = Form(...), 
+    position: str = Form(...),
+    service: WritingService = Depends(get_writing_service)
+):
+    return await service.check_letter_writing(user_image, target_image, letter, position)

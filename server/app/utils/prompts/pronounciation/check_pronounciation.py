@@ -18,9 +18,9 @@ def build_check_pronounciation_messages(
 
     You must respond ONLY with valid JSON in this exact format:
     {
-        feedback: "You're saying a front-of-the-mouth 'k' sound. Try moving the sound deeper — imagine you're starting a light cough from the back of the throat, then release it gently: قِ."
-        mistake_tags: ["BACK_OF_TONGUE_NOT_ENGAGED"]
-        performance_reflection: "Pronunciation accuracy was impacted by substitution of /ق/ with /ك/, indicating insufficient posterior tongue engagement"
+        "feedback": "You're saying a front-of-the-mouth 'k' sound. Try moving the sound deeper — imagine you're starting a light cough from the back of the throat, then release it gently: قِ."
+        "mistake_tags": ["BACK_OF_TONGUE_NOT_ENGAGED"]
+        "performance_reflection": "Pronunciation accuracy was impacted by substitution of /ق/ with /ك/, indicating insufficient posterior tongue engagement"
     }
 
     Rules:
