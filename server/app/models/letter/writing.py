@@ -11,7 +11,7 @@ class WritingQAResponse(BaseModel):
 class WritingPhotoRetakeResponse(BaseModel):
     capture_tips: str
 
-class LetterHandwritingScores(TypedDict):
+class LetterHandwritingScores(BaseModel):
     legibility: float
     form_accuracy: float
     dots_diacritics: float

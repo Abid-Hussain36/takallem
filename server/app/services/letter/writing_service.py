@@ -1,15 +1,17 @@
 from app.models.letter.writing import LetterHandwritingScores, LetterWritingResponse, WritingQAResponse, WritingPhotoRetakeResponse
 from app.utils.openai import openai_client
 from fastapi import UploadFile
+from typing import Union
 from app.utils.prompts.writing.letter_writing_qa import build_letter_writing_qa_messages
 from app.utils.prompts.writing.letter_writing import build_letter_writing_messages
+from app.utils.enums import LetterPosition
 import base64, os, json
 
 
-class WritingService:
-    async def check_letter_writing(user_image: UploadFile, target_image: UploadFile, letter: str, position: str) -> LetterWritingResponse | WritingPhotoRetakeResponse:
+class LetterWritingService:
+    async def check_letter_writing(self, user_image: UploadFile, target_image: UploadFile, letter: str, position: LetterPosition) -> Union[LetterWritingResponse, WritingPhotoRetakeResponse]:
         thresholds = {
-            "baseline_qa_confidence": 70.0,
+            "baseline_qa_confidence": 55.0,
             "baseline_eval_confidence": 60.0,
             "legibility": 75.0,
             "form_accuracy": 85.0,
@@ -55,10 +57,10 @@ class WritingService:
             print("QA error when checking letter writing.")
 
         # If QA says the image is not good enough, we ask the user to retake their writing image
-        if (not qa_response.is_usable) or qa_response.confidence < 0.55:
-            return WritingPhotoRetakeResponse(qa_response.capture_tips)
+        if (not qa_response.is_usable) or qa_response.confidence < thresholds["baseline_qa_confidence"]:
+            return WritingPhotoRetakeResponse(capture_tips=qa_response.capture_tips)
 
-        writing_eval_messages = build_letter_writing_messages(user_image_url, target_image_url, letter, position)
+        writing_eval_messages = build_letter_writing_messages(user_image_url, target_image_url, letter, position.value)
 
         writing_eval_chat_response = await openai_client.chat.completions.create(
             model=os.getenv("LETTER_PRONOUNCIATION_MODEL") or "gpt-5.2-chat-latest",
@@ -101,5 +103,3 @@ class WritingService:
             print("Error when parsing response of letter written evaluation.")
 
         return writing_eval_response
-
-        

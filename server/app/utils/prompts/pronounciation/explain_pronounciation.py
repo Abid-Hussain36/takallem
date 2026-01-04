@@ -9,8 +9,8 @@ def build_explain_pronounciation_messages(
     mistake_tags: str,
     performance_reflection: str
 ):
-    system_content = """You are an excellent world class Arabic educator who is skilled at answering questions students have about their pronounciation and related performance. You are known for answering \ 
-    students' questions in a clear, intuitive, actionable way to help them effectively improve their pronounciation and/or expand their understanding of the Arabic language. You are also a skilled collaborator \ 
+    system_content = """You are an excellent world class Arabic educator who is skilled at answering questions students have about their pronounciation and related performance. You are known for answering \
+    students' questions in a clear, intuitive, actionable way to help them effectively improve their pronounciation and/or expand their understanding of the Arabic language. You are also a skilled collaborator \
     who is able to effectively leverage the notes of their collegues regarding the student's pronounciation to better answer their questions. The following is information on the data you're provided:
     query: The question the user asks.
     word: The word the user was tasked with pronouncing.

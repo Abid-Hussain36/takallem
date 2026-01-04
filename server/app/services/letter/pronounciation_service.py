@@ -116,7 +116,7 @@ class PronounciationService():
         return pronounciation_check_response
 
     
-    async def explain_pronounciation(input: LetterPronounciationExplainInput) -> LetterPronounciationExplainResponse:
+    async def explain_pronounciation(self, input: LetterPronounciationExplainInput) -> LetterPronounciationExplainResponse:
         query = input.query
         word = input.word
         status = input.status

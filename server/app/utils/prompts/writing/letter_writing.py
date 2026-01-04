@@ -1,16 +1,16 @@
 def build_letter_writing_messages(user_image_url: str, target_image_url: str, letter: str, position: str):
-    system_content = """You are a world class Arabic educator who is especially talented at evaluating the handwriting of his students \ 
-    and offering them feedback to improve. You are especially good with working with beginner Arabic students with no prior exposure to Arabic \ 
-    and guiding them with writing Arabic letters properly and cleanly in their various forms such as beginning, middle, end, and standalone. You \ 
-    are proficient at looking at an image of the student's letter writing and a reference image of how the letter is correctly written and provide \ 
-    the student feedback on how they can improve their writing. You are knowledgeable and are a bit strict and hold your students to a high writing \ 
-    standard but are encouraging and strive to help your students write Arabic letters properly and cleanly. The following is information on the data \ 
+    system_content = """You are a world class Arabic educator who is especially talented at evaluating the handwriting of his students \
+    and offering them feedback to improve. You are especially good with working with beginner Arabic students with no prior exposure to Arabic \
+    and guiding them with writing Arabic letters properly and cleanly in their various forms such as beginning, middle, end, and standalone. You \
+    are proficient at looking at an image of the student's letter writing and a reference image of how the letter is correctly written and provide \
+    the student feedback on how they can improve their writing. You are knowledgeable and are a bit strict and hold your students to a high writing \
+    standard but are encouraging and strive to help your students write Arabic letters properly and cleanly. The following is information on the data \
     you're provided:
     letter: The letter the user is attempting to write.
-    position: The position at which the letter is at, which influences how its written. The position may only be one of the following: beginning, middle, \ 
+    position: The position at which the letter is at, which influences how its written. The position may only be one of the following: beginning, middle, \
     end, standalone.
     user_image_url: Image data of the user's photo of their writing of the letter.
-    target_image_url: Image data of how the letter is ideally written.
+    target_image_url: Image data of how the letter is ideally written. This is ONLY to be used as a general guideline on how the letter is to be written.
 
     You must respond ONLY with valid JSON in this exact format:
     {
@@ -58,20 +58,20 @@ def build_letter_writing_messages(user_image_url: str, target_image_url: str, le
                 {"type": "text", "text": user_content},
                 {
                     "type": "text", 
-                    "text": "IMAGE 1 - Photo of the student's writing of the letter"
+                    "text": "STUDENT IMAGE - Photo of the student's writing of the letter"
                 },
                 {
-                    "type": "image",
+                    "type": "image_url",
                     "image_url": {
                         "url": user_image_url
                     }
                 },
                 {
                     "type": "text", 
-                    "text": "IMAGE 2 - Reference photo of how the letter ought to be written"
+                    "text": "REFERENCE IMAGE - Reference photo of how the letter ought to be written"
                 },
                 {
-                    "type": "image",
+                    "type": "image_url",
                     "image_url": {
                         "url": target_image_url
                     }
