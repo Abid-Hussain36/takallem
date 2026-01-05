@@ -1,9 +1,9 @@
-from typing import Union
+from typing import Union, List
 from fastapi import APIRouter, UploadFile, File, Form, Depends
 from app.models.letter.pronounciation import LetterPronounciationResponse, LetterPronounciationExplainInput, LetterPronounciationExplainResponse
 from app.services.letter.pronounciation_service import PronounciationService
 from app.utils.di import get_pronounciation_service, get_writing_service
-from app.models.letter.writing import LetterWritingResponse, WritingPhotoRetakeResponse
+from app.models.letter.writing import LetterJoiningResponse, LetterWritingResponse, WritingPhotoRetakeResponse
 from app.services.letter.writing_service import LetterWritingService
 from app.utils.enums import LetterPosition
 
@@ -41,3 +41,13 @@ async def check_letter_writing(
     service: LetterWritingService = Depends(get_writing_service)
 ):
     return await service.check_letter_writing(user_image, target_image, letter, position)
+
+
+@letter_router.post("/writing/joining", response_model=Union[LetterJoiningResponse, WritingPhotoRetakeResponse])
+async def check_letter_joining(
+    user_image: UploadFile, 
+    letter_list: List[str] = Form(...), 
+    target_word: str = Form(...),
+    service: LetterWritingService = Depends(get_writing_service)
+):
+    return await service.check_letter_joining(user_image, letter_list, target_word)

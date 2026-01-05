@@ -1,4 +1,5 @@
 from typing import Literal, List, TypedDict
+from fastapi import status
 from pydantic import BaseModel
 
 
@@ -25,3 +26,20 @@ class LetterWritingResponse(BaseModel):
     feedback: str
     mistake_tags: List[str]
     performance_reflection: str
+
+class LetterJoiningScores(BaseModel):
+    connection_accuracy: float
+    positional_forms: float
+    spacing_flow: float
+    baseline_consistency: float
+    dots_diacritics: float
+    overall: float
+
+class LetterJoiningResponse(BaseModel):
+    status: Literal["pass", "fail"]
+    confidence: float
+    scores: LetterJoiningScores
+    feedback: str
+    mistake_tags: List[str]
+    performance_reflection: str
+    

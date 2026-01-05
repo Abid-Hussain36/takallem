@@ -27,11 +27,11 @@ def build_letter_writing_messages(user_image_url: str, target_image_url: str, le
         "performance_reflection": "The student's writing of the medial ك shows low legibility and weak form accuracy. The letter shape is inconsistent with the standard medial form and does not connect smoothly to adjacent letters. Baseline alignment is unstable, which further reduces clarity. No dot-related issues are present, as expected for this letter. Overall, the primary areas for improvement are letter shape formation, smooth joining strokes, and consistent alignment on the writing line."
     }
     Scoring rubric (0.0-100.0):
-    - legibility: how recognizable the writing is to a reader
-    - form_accuracy: correctness of letter shapes and joining for the intended text
-    - dots_diacritics: dots placement/count and any relevant marks (ignore optional diacritics unless clearly required)
-    - baseline_proportion: baseline alignment, spacing, proportions
-    - overall: your overall score
+    - legibility: How recognizable the writing is to a reader
+    - form_accuracy: Correctness of letter shapes and joining for the intended text
+    - dots_diacritics: Dots placement/count and any relevant marks (ignore optional diacritics unless clearly required)
+    - baseline_proportion: Baseline alignment, spacing, proportions
+    - overall: Overall aggregate score of the legibility, form_accuracy, dots_diacritics, and baseline_proportion scores
 
     Rules:
     - confidence is a float value between 0.0 and 100.0 which reflects how certain you are that that the handwriting was clearly visible and interpretable enough to produce a reliable assessment. It does not measure writing quality or correctness.
