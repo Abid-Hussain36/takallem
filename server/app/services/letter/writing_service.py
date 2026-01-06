@@ -1,10 +1,11 @@
-from app.models.letter.writing import LetterHandwritingScores, LetterJoiningResponse, LetterJoiningScores, LetterWritingResponse, WritingQAResponse, WritingPhotoRetakeResponse
+from app.models.letter.writing import DictationResponse, DictationScores, LetterHandwritingScores, LetterJoiningResponse, LetterJoiningScores, LetterWritingResponse, WritingQAResponse, WritingPhotoRetakeResponse
 from app.utils.openai import openai_client
 from fastapi import UploadFile
 from typing import Union, List
 from app.utils.prompts.writing.letter_writing_qa import build_letter_writing_qa_messages
 from app.utils.prompts.writing.letter_writing import build_letter_writing_messages
 from app.utils.prompts.writing.letter_joining import build_letter_joining_messages
+from app.utils.prompts.writing.letter_dictation import build_letter_dictation_messages
 from app.utils.enums import LetterPosition
 import base64, os, json
 
@@ -94,7 +95,6 @@ class LetterWritingService:
                 status = "pass"
             writing_eval_response = LetterWritingResponse(
                 status=status,
-                confidence=writing_eval_response_obj["confidence"],
                 scores=handwriting_scores,
                 feedback=writing_eval_response_obj["feedback"],
                 mistake_tags=writing_eval_response_obj["mistake_tags"],
@@ -145,7 +145,7 @@ class LetterWritingService:
                 capture_tips=qa_response_obj["capture_tips"]
             )
         except Exception:
-            print("QA error when checking letter writing.")
+            print("QA error when checking letter joining.")
 
         # If QA says the image is not good enough, we ask the user to retake their writing image
         if (not qa_response.is_usable) or qa_response.confidence < thresholds["baseline_qa_confidence"]:
@@ -186,13 +186,108 @@ class LetterWritingService:
                 status = "pass"
             joining_response = LetterJoiningResponse(
                 status=status,
-                confidence=joining_obj["confidence"],
                 scores=joining_scores,
                 feedback=joining_obj["feedback"],
                 mistake_tags=joining_obj["mistake_tags"],
                 performance_reflection=joining_obj["performance_reflection"]
             )
         except Exception:
-            pass
+            print("Error when parsing joining chat response.")
 
         return joining_response
+
+
+    async def check_dictation(self, user_image: UploadFile, target_word: str) -> Union[DictationResponse, WritingPhotoRetakeResponse]:
+        thresholds = {
+            "baseline_qa_confidence": 70.0,
+            "baseline_eval_confidence": 0.65,
+            "word_accuracy": 90.0,
+            "letter_identity": 90.0,
+            "joining_quality": 80.0,
+            "legibility": 75.0,
+            "dots_diacritics": 92.0,
+            "baseline_spacing": 70.0,
+            "overall": 85.0,
+        }
+
+        raw_user_bytes = await user_image.read()
+
+        # Getting image in the right format to be sent to OpenAI API
+        user_image_base64 = base64.b64encode(raw_user_bytes).decode("utf-8")
+        user_image_format = user_image.content_type or "image/jpeg"
+        user_image_url = f"data:{user_image_format};base64,{user_image_base64}"
+
+        qa_messages = build_letter_writing_qa_messages(user_image_url)
+
+        qa_chat_response = await openai_client.chat.completions.create(
+            model=os.getenv("LETTER_PRONOUNCIATION_MODEL") or "gpt-5.2-chat-latest",
+            messages=qa_messages,
+            response_format={"type": "json_object"}
+        )
+
+        qa_response = {}
+
+        try:
+            qa_response_content = qa_chat_response.choices[0].message.content
+            qa_response_obj = json.loads(qa_response_content)
+            qa_response = WritingQAResponse(
+                is_usable=qa_response_obj["is_usable"],
+                confidence=qa_response_obj["confidence"],
+                reasons=qa_response_obj["reasons"],
+                capture_tips=qa_response_obj["capture_tips"]
+            )
+        except Exception:
+            print("QA error when checking dictation.")
+
+        # If QA says the image is not good enough, we ask the user to retake their writing image
+        if (not qa_response.is_usable) or qa_response.confidence < thresholds["baseline_qa_confidence"]:
+            return WritingPhotoRetakeResponse(capture_tips=qa_response.capture_tips)
+
+        dictation_messages = build_letter_dictation_messages(user_image_url, target_word)
+
+        dictation_chat_response = await openai_client.chat.completions.create(
+            model=os.getenv("LETTER_PRONOUNCIATION_MODEL") or "gpt-5.2-chat-latest",
+            messages=dictation_messages,
+            response_format={"type": "json_object"}
+        )
+
+        dictation_response = {}
+        status = "fail"
+
+        try:
+            dictation_content = dictation_chat_response.choices[0].message.content
+            dictation_obj = json.loads(dictation_content)
+            dictation_scores = DictationScores(
+                word_accuracy=dictation_obj["scores"]["word_accuracy"],
+                letter_identity=dictation_obj["scores"]["letter_identity"],
+                joining_quality=dictation_obj["scores"]["joining_quality"],
+                legibility=dictation_obj["scores"]["legibility"],
+                dots_diacritics=dictation_obj["scores"]["dots_diacritics"],
+                baseline_spacing=dictation_obj["scores"]["baseline_spacing"],
+                overall=dictation_obj["scores"]["overall"],
+            )
+            passed = (
+                dictation_obj["confidence"] >= thresholds["baseline_eval_confidence"]
+                and dictation_obj["detected_word"] == target_word
+                and dictation_scores.word_accuracy >= thresholds["word_accuracy"]
+                and dictation_scores.letter_identity >= thresholds["letter_identity"]
+                and dictation_scores.joining_quality >= thresholds["joining_quality"]
+                and dictation_scores.legibility >= thresholds["legibility"]
+                and dictation_scores.dots_diacritics >= thresholds["dots_diacritics"]
+                and dictation_scores.baseline_spacing >= thresholds["baseline_spacing"]
+                and dictation_scores.overall >= thresholds["overall"]
+            )
+            if passed:
+                status = "pass"
+            dictation_response = DictationResponse(
+                status=status,
+                detected_word=dictation_obj["detected_word"],
+                scores=dictation_scores,
+                feedback=dictation_obj["feedback"],
+                mistake_tags=dictation_obj["mistake_tags"],
+                performance_reflection=dictation_obj["performance_reflection"]
+            )
+        except Exception:
+            print("Error when parsing dictation chat response.")
+
+        return dictation_response

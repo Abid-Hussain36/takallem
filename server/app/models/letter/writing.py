@@ -21,7 +21,6 @@ class LetterHandwritingScores(BaseModel):
 
 class LetterWritingResponse(BaseModel):
     status: Literal["pass", "fail"]
-    confidence: float
     scores: LetterHandwritingScores
     feedback: str
     mistake_tags: List[str]
@@ -37,8 +36,24 @@ class LetterJoiningScores(BaseModel):
 
 class LetterJoiningResponse(BaseModel):
     status: Literal["pass", "fail"]
-    confidence: float
     scores: LetterJoiningScores
+    feedback: str
+    mistake_tags: List[str]
+    performance_reflection: str
+
+class DictationScores(BaseModel):
+    word_accuracy: float
+    letter_identity: float
+    joining_quality: float
+    legibility: float
+    dots_diacritics: float
+    baseline_spacing: float
+    overall: float
+
+class DictationResponse(BaseModel):
+    status: Literal["pass", "fail"]
+    detected_word: str
+    scores: DictationScores
     feedback: str
     mistake_tags: List[str]
     performance_reflection: str

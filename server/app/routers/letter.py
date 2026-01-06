@@ -1,9 +1,10 @@
+from re import U
 from typing import Union, List
 from fastapi import APIRouter, UploadFile, File, Form, Depends
 from app.models.letter.pronounciation import LetterPronounciationResponse, LetterPronounciationExplainInput, LetterPronounciationExplainResponse
 from app.services.letter.pronounciation_service import PronounciationService
 from app.utils.di import get_pronounciation_service, get_writing_service
-from app.models.letter.writing import LetterJoiningResponse, LetterWritingResponse, WritingPhotoRetakeResponse
+from app.models.letter.writing import DictationResponse, LetterJoiningResponse, LetterWritingResponse, WritingPhotoRetakeResponse
 from app.services.letter.writing_service import LetterWritingService
 from app.utils.enums import LetterPosition
 
@@ -34,8 +35,8 @@ async def explain_pronounciation(input: LetterPronounciationExplainInput, servic
 
 @letter_router.post("/writing/alphabet", response_model=Union[LetterWritingResponse, WritingPhotoRetakeResponse])
 async def check_letter_writing(
-    user_image: UploadFile, 
-    target_image: UploadFile, 
+    user_image: UploadFile = File(...), 
+    target_image: UploadFile = File(...), 
     letter: str = Form(...), 
     position: LetterPosition = Form(...),
     service: LetterWritingService = Depends(get_writing_service)
@@ -45,9 +46,18 @@ async def check_letter_writing(
 
 @letter_router.post("/writing/joining", response_model=Union[LetterJoiningResponse, WritingPhotoRetakeResponse])
 async def check_letter_joining(
-    user_image: UploadFile, 
+    user_image: UploadFile = File(...), 
     letter_list: List[str] = Form(...), 
     target_word: str = Form(...),
     service: LetterWritingService = Depends(get_writing_service)
 ):
     return await service.check_letter_joining(user_image, letter_list, target_word)
+
+
+@letter_router.post("/writing/dictation", response_model=Union[DictationResponse, WritingPhotoRetakeResponse])
+async def check_dictation(
+    user_image: UploadFile = File(...),
+    target_word: str = Form(...),
+    service: LetterWritingService = Depends(get_writing_service)
+):
+    return await service.check_dictation(user_image, target_word)

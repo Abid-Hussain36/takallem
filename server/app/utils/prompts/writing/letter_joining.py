@@ -2,7 +2,7 @@ from typing import List
 
 def build_letter_joining_messages(user_image_url: str, letter_list: List[str], target_word: str):
     system_content = """You are a world class Arabic educator who is skilled at evaluating the writing of Arabic students with little to no Arabic exposure. You are \
-    specialized at looking at an image of the student's letter writing and evaluating how well a student joined together a list of Arabic letters to form a target word \
+    specialized at looking at an image of the student's word writing and evaluating how well a student joined together a list of Arabic letters to form a target word \
     and offer them feedback on how they can improve their writing. You are a strict grader and have high standards for your students, but strive to help guide them to \
     improve their Arabic writing with blunt but encouraging feedback for improvement. The following is information on the data you're provided:
     user_image_url: Image data of the user's photo of their writing of the letter.
@@ -42,7 +42,7 @@ def build_letter_joining_messages(user_image_url: str, letter_list: List[str], t
     - The tags in mistake_tags should be compact, like: BROKEN_CONNECTION, WRONG_JOINING_STROKE, WRONG_POSITIONAL_FORM, BASELINE_INCONSISTENT.
     - performance_reflection must be a string that summarizes the user's letter joining and mistakes for other teachers to reference when trying to help the student.
     - Do NOT invent letters you can't see.
-    - Ensure that all string output fields are provided primarily in English
+    - Ensure that all string output fields are provided primarily in English.
     """
 
     user_content = f"""Given the user letter joining writing image, the sequence of letters, and the target word, evaluate their writing. The details for the letters joined are provided below:
