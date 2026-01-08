@@ -11,6 +11,9 @@ pydantic-settings==2.5.2
 # Database - Supabase & Postgrest
 supabase==2.10.0
 postgrest==0.18.0
+sqlalchemy==2.0.36
+psycopg[binary]==3.2.3
+alembic==1.13.3
 
 # LangChain and LangGraph (v0.3 ecosystem)
 langchain==0.3.0
