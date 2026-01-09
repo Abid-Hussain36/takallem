@@ -1,7 +1,19 @@
 import enum
 
 
-class Course(str, enum.Enum):
+class AvailableLanguage(str, enum.Enum):
+    ARABIC = "Arabic"
+    SPANISH = "Spanish"
+    FRENCH = "French"
+
+
+class AvailableDialect(str, enum.Enum):
+    MSA = "MSA"
+    LEVANTINE = "Levantine"
+    EGYPTIAN = "Egyptian"
+
+
+class AvailableCourse(str, enum.Enum):
     BEGINNER_ARABIC = "Beginner Arabic"
     INTERMEDIATE_ARABIC = "Intermediate Arabic"
     ADVANCED_ARABIC = "Advanced Arabic"

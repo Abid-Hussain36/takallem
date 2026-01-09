@@ -1,7 +1,7 @@
 from sqlalchemy import ForeignKey, Index, String, UniqueConstraint, Enum
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.db.database import Base
-from app.db.enums import Course
+from app.db.enums import AvailableCourse
 from app.models.db.general_resource.module_response import ModuleResponse
 
 
@@ -10,7 +10,7 @@ class Module(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True, index=True)  # PK
 
-    course: Mapped[Course] = mapped_column(Enum(Course))
+    course: Mapped[AvailableCourse] = mapped_column(Enum(AvailableCourse))
     unit: Mapped[str] = mapped_column(String)
     section: Mapped[str] = mapped_column(String)
     title: Mapped[str] = mapped_column(String)

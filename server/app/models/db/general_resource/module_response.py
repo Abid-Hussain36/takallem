@@ -1,10 +1,10 @@
 from pydantic import BaseModel
-from app.db.enums import Course
+from app.db.enums import AvailableCourse
 
 
 class ModuleResponse(BaseModel):
     id: int
-    course: Course
+    course: AvailableCourse
     unit: str
     section: str
     title: str

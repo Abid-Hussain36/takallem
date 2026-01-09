@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from app.db.enums import Course
+from app.db.enums import AvailableCourse
 
 
 class VocabWordResponse(BaseModel):
@@ -7,7 +7,7 @@ class VocabWordResponse(BaseModel):
     lecture_id: int
     word: str
     meaning: str
-    course: Course
+    course: AvailableCourse
     language: str
     dialect: str | None = None
     vocab_audio: str

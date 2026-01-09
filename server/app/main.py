@@ -19,9 +19,7 @@ app.include_router(vocab_router, prefix="/vocab")
 
 @app.get("/health")
 def health_check(db: Session = Depends(get_db)):
-    """
-    Health check for DB
-    """
+    """Health check for DB"""
     try:
         result = db.execute(text("SELECT 1")).scalar()
         

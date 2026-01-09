@@ -1,7 +1,7 @@
 from sqlalchemy import ForeignKey, String, Enum
 from sqlalchemy.orm import Mapped, mapped_column
 from app.db.database import Base
-from app.db.enums import Course
+from app.db.enums import AvailableCourse
 from app.models.db.vocab.vocab_word_response import VocabWordResponse
 
 
@@ -14,7 +14,7 @@ class VocabWord(Base):
 
     word: Mapped[str] = mapped_column(String)
     meaning: Mapped[str] = mapped_column(String)
-    course: Mapped[Course] = mapped_column(Enum(Course))
+    course: Mapped[AvailableCourse] = mapped_column(Enum(AvailableCourse))
     language: Mapped[str] = mapped_column(String)
     dialect: Mapped[str | None] = mapped_column(String)
     vocab_audio: Mapped[str] = mapped_column(String)
