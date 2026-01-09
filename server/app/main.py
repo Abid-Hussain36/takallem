@@ -27,19 +27,11 @@ def health_check(db: Session = Depends(get_db)):
         
         return {
             "status": "healthy",
-            "message": "API and database are working correctly",
-            "database": {
-                "connected": True,
-                "test_query_result": result  # Should be 1
-            }
+            "test_query_result": result
         }
         
     except Exception as e:
          return {
             "status": "unhealthy",
-            "message": "Database connection failed",
-            "database": {
-                "connected": False,
-                "error": str(e)
-            }
+            "test_query_result": str(e)
         }
