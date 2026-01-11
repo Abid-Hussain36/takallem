@@ -2,7 +2,7 @@ from typing import List
 from sqlalchemy import ForeignKey, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.db.database import Base
-from app.db.schemas import vocab_speaking_problem_word
+from app.db.schemas.vocab_speaking_problem_word import vocab_speaking_problem_word
 from app.models.db.problem.vocab_speaking_problem_response import VocabSpeakingProblemResponse
 
 

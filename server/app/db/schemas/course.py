@@ -13,6 +13,7 @@ class Course(Base):
     language_id: Mapped[int] = mapped_column(ForeignKey("languages.id", ondelete="CASCADE")) # FK
 
     course_name: Mapped[AvailableCourse] = mapped_column(Enum(AvailableCourse))
+    total_modules: Mapped[int] = mapped_column()
     image: Mapped[str] = mapped_column(String)
     text_color: Mapped[str] = mapped_column(String)
 

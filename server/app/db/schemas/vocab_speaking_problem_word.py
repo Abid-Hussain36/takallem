@@ -1,6 +1,7 @@
 from sqlalchemy import Column, ForeignKey, Integer, Table
 from app.db.database import Base
 
+
 # Association Table for Many to Many between VocabSpeakingProblem and VocabWord
 vocab_speaking_problem_word = Table(
     "vocab_speaking_problem_words",

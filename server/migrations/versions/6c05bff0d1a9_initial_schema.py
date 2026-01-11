@@ -30,7 +30,7 @@ def upgrade() -> None:
     op.create_index(op.f('ix_languages_id'), 'languages', ['id'], unique=False)
     op.create_table('resources',
     sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
-    sa.Column('resource_type', sa.Enum('LETTER_SPEAKING_LECTURE', 'LETTER_WRITING_LECTURE', 'VOCAB_LECTURE', 'INFO_LECTURE', 'READING_COMPREHENSION_TEXT', 'VOCAB_WORD', 'LETTER_PRONOUNCIATION_PROBLEM', 'WORD_PRONOUNCIATION_PROBLEM_SET', 'DISCRIMINATION_PROBLEM_SET', 'LETTER_RECOGNITION_PROBLEM_SET', 'LETTER_WRITING_PROBLEM_SET', 'LETTER_JOINING_PROBLEM_SET', 'DICTATION_PROBLEM_SET', 'VOCAB_READING_PROBLEM_SET', 'VOCAB_LISTENING_PROBLEM_SET', 'VOCAB_SPEAKING_PROBLEM_SET', 'READING_COMPREHENSION_MCQ_PROBLEM_SET', 'READING_COMPREHENSION_WRITING_PROBLEM_SET', 'UNIT_TEST', 'FINAL_EXAM', name='resourcetype'), nullable=False),
+    sa.Column('resource_type', sa.Enum('LETTER_SPEAKING_LECTURE', 'LETTER_WRITING_LECTURE', 'VOCAB_LECTURE', 'INFO_LECTURE', 'DIALECT_SELECTION', 'LETTER_PRONOUNCIATION_PROBLEM', 'WORD_PRONOUNCIATION_PROBLEM_SET', 'DISCRIMINATION_PROBLEM_SET', 'LETTER_RECOGNITION_PROBLEM_SET', 'LETTER_WRITING_PROBLEM_SET', 'LETTER_JOINING_PROBLEM_SET', 'DICTATION_PROBLEM_SET', 'VOCAB_READING_PROBLEM_SETS', 'VOCAB_LISTENING_PROBLEM_SETS', 'VOCAB_SPEAKING_PROBLEM_SETS', 'READING_COMPREHENSION_MCQ_PROBLEM_SET', 'READING_COMPREHENSION_WRITING_PROBLEM_SET', 'UNIT_TEST', 'FINAL_EXAM', name='resourcetype'), nullable=False),
     sa.PrimaryKeyConstraint('id')
     )
     op.create_index(op.f('ix_resources_id'), 'resources', ['id'], unique=False)
@@ -143,12 +143,12 @@ def upgrade() -> None:
     op.create_index('idx_course_unit_section_number', 'modules', ['course', 'unit', 'section', 'number'], unique=False)
     op.create_index(op.f('ix_modules_id'), 'modules', ['id'], unique=False)
     op.create_table('reading_comprehension_texts',
-    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
     sa.Column('text_title', sa.String(), nullable=False),
     sa.Column('text', sa.ARRAY(sa.String()), nullable=False),
-    sa.ForeignKeyConstraint(['id'], ['resources.id'], ondelete='CASCADE'),
     sa.PrimaryKeyConstraint('id')
     )
+    op.create_index(op.f('ix_reading_comprehension_texts_id'), 'reading_comprehension_texts', ['id'], unique=False)
     op.create_table('user_course_progress',
     sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
     sa.Column('user_id', sa.Integer(), nullable=False),
@@ -362,6 +362,7 @@ def downgrade() -> None:
     op.drop_index(op.f('ix_user_course_progress_id'), table_name='user_course_progress')
     op.drop_index('idx_user_course_dialect', table_name='user_course_progress')
     op.drop_table('user_course_progress')
+    op.drop_index(op.f('ix_reading_comprehension_texts_id'), table_name='reading_comprehension_texts')
     op.drop_table('reading_comprehension_texts')
     op.drop_index(op.f('ix_modules_id'), table_name='modules')
     op.drop_index('idx_course_unit_section_number', table_name='modules')

@@ -1,5 +1,5 @@
 from typing import Dict
-from sqlalchemy import ForeignKey, Index, String, UniqueConstraint, Enum
+from sqlalchemy import ForeignKey, Index, Integer, String, UniqueConstraint, Enum
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.db.database import Base
@@ -19,6 +19,7 @@ class UserCourseProgress(Base):
     
     course_name: Mapped[AvailableCourse] = mapped_column(Enum(AvailableCourse))
     dialect: Mapped[str | None] = mapped_column(String)
+    total_modules: Mapped[int] = mapped_column()
     curr_module: Mapped[int] = mapped_column(default=1)
     covered_words: Mapped[Dict[str, int]] = mapped_column(JSONB, default={})
     problem_counter: Mapped[int] = mapped_column(default=0)
@@ -38,6 +39,7 @@ class UserCourseProgress(Base):
             id=self.id,
             course_name=self.course_name,
             dialect=self.dialect,
+            total_modules=self.total_modules,
             curr_module=self.curr_module,
             covered_words=self.covered_words,
             problem_counter=self.problem_counter,

@@ -1,4 +1,4 @@
-from sqlalchemy import ForeignKey, String, Enum
+from sqlalchemy import ForeignKey, Integer, String, Enum
 from sqlalchemy.orm import Mapped, mapped_column
 from app.db.database import Base
 from app.db.enums import AvailableCourse
@@ -12,6 +12,7 @@ class VocabWord(Base):
 
     lecture_id: Mapped[int] = mapped_column(ForeignKey("vocab_lectures.id"))  # FK for Vocab Lecture
 
+    number: Mapped[int] = mapped_column(Integer)
     word: Mapped[str] = mapped_column(String)
     meaning: Mapped[str] = mapped_column(String)
     course: Mapped[AvailableCourse] = mapped_column(Enum(AvailableCourse))
@@ -23,6 +24,7 @@ class VocabWord(Base):
         return VocabWordResponse(
             id=self.id,
             lecture_id=self.lecture_id,
+            number=self.number,
             word=self.word,
             meaning=self.meaning,
             course=self.course,

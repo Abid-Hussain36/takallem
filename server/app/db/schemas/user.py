@@ -1,8 +1,9 @@
 from typing import List
-from sqlalchemy import String, ARRAY
+from sqlalchemy import String, ARRAY, Enum
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.db.database import Base
 from app.models.db.user.user_response import UserResponse
+from app.db.enums import AvailableCourse, Gender
 
 
 class User(Base):
@@ -14,6 +15,8 @@ class User(Base):
     username: Mapped[str] = mapped_column(String(255), unique=True, index=True)
     first_name: Mapped[str] = mapped_column(String(255))
     last_name: Mapped[str | None] = mapped_column(String(255))
+    gender: Mapped[Gender] = mapped_column(Enum(Gender))
+    current_course: Mapped[AvailableCourse] = mapped_column(Enum(AvailableCourse))
     languages_learning: Mapped[List[str]] = mapped_column(ARRAY(String), default=[])  # The list of languages the user is currently learning
     
     # Relationships

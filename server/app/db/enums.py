@@ -1,6 +1,11 @@
 import enum
 
 
+class Gender(str, enum.Enum):
+    MALE = "Male"
+    FEMALE = "Female"
+
+
 class AvailableLanguage(str, enum.Enum):
     ARABIC = "Arabic"
     SPANISH = "Spanish"
@@ -27,8 +32,7 @@ class ResourceType(str, enum.Enum):
     INFO_LECTURE = "Info Lecture"
 
     # General Resources
-    READING_COMPREHENSION_TEXT = "Reading Comprehension Text"
-    VOCAB_WORD = "Vocab Word"
+    DIALECT_SELECTION = "Dialect Selection"
 
     # Problem Set Types
     LETTER_PRONOUNCIATION_PROBLEM = "Letter Pronounciation Problem"
@@ -38,9 +42,9 @@ class ResourceType(str, enum.Enum):
     LETTER_WRITING_PROBLEM_SET = "Letter Writing Problem Set"
     LETTER_JOINING_PROBLEM_SET = "Letter Joining Problem Set"
     DICTATION_PROBLEM_SET = "Dictation Problem Set"
-    VOCAB_READING_PROBLEM_SET = "Vocab Reading Problem Set"
-    VOCAB_LISTENING_PROBLEM_SET = "Vocab Listening Problem Set"
-    VOCAB_SPEAKING_PROBLEM_SET = "Vocab Speaking Problem Set"
+    VOCAB_READING_PROBLEM_SETS = "Vocab Reading Problem Sets"
+    VOCAB_LISTENING_PROBLEM_SETS = "Vocab Listening Problem Sets"
+    VOCAB_SPEAKING_PROBLEM_SETS = "Vocab Speaking Problem Sets"
     READING_COMPREHENSION_MCQ_PROBLEM_SET = "Reading Comprehension MCQ Problem Set"
     READING_COMPREHENSION_WRITING_PROBLEM_SET = "Reading Comprehension Writing Problem Set"
 

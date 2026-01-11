@@ -19,11 +19,14 @@ from app.db.schemas.vocab_word import VocabWord
 from app.db.schemas.vocab_lecture import VocabLecture
 from app.db.schemas.vocab_speaking_problem import VocabSpeakingProblem
 from app.db.schemas.vocab_speaking_problem_set import VocabSpeakingProblemSet
+from app.db.schemas.vocab_speaking_problem_sets import VocabSpeakingProblemSets
 from app.db.schemas.vocab_speaking_problem_word import vocab_speaking_problem_word
 from app.db.schemas.vocab_listening_problem import VocabListeningProblem
 from app.db.schemas.vocab_listening_problem_set import VocabListeningProblemSet
+from app.db.schemas.vocab_listening_problem_sets import VocabListeningProblemSets
 from app.db.schemas.vocab_reading_problem import VocabReadingProblem
 from app.db.schemas.vocab_reading_problem_set import VocabReadingProblemSet
+from app.db.schemas.vocab_reading_problem_sets import VocabReadingProblemSets
 from app.db.schemas.dictation_problem import DictationProblem
 from app.db.schemas.dictation_problem_set import DictationProblemSet
 from app.db.schemas.discrimination_problem import DiscriminationProblem
@@ -48,6 +51,8 @@ from app.db.schemas.reading_comprehension_writing_problem_set import ReadingComp
 from app.db.schemas.language import Language
 from app.db.schemas.course import Course
 from app.db.schemas.dialect import Dialect
+from app.db.schemas.dialect_selection import DialectSelection
+from app.db.schemas.dialect_selection_dialects import dialect_selection_dialects
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
