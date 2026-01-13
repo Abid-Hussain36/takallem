@@ -1,6 +1,6 @@
 from typing import List
 from sqlalchemy import ForeignKey, String, ARRAY
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.db.database import Base
 from app.models.db.problem.letter_recognition_problem_response import LetterRecognitionProblemResponse
 
@@ -15,6 +15,9 @@ class LetterRecognitionProblem(Base):
     word: Mapped[str] = mapped_column(String)
     answer_choices: Mapped[List[str]] = mapped_column(ARRAY(String), default=[])
     correct_answer: Mapped[str] = mapped_column(String)
+
+    # Relationships
+    problem_set: Mapped["LetterRecognitionProblemSet"] = relationship(back_populates="problems")
 
     def to_model(self) -> LetterRecognitionProblemResponse:
         return LetterRecognitionProblemResponse(

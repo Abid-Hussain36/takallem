@@ -14,7 +14,10 @@ class DictationProblemSet(Resource):
     problem_count: Mapped[int] = mapped_column()
 
     # Relationships
-    problems: Mapped[List["DictationProblem"]] = relationship()
+    problems: Mapped[List["DictationProblem"]] = relationship(
+        back_populates="problem_set",
+        cascade="all, delete-orphan"
+    )
 
     __mapper_args__ = {
         "polymorphic_identity": ResourceType.DICTATION_PROBLEM_SET

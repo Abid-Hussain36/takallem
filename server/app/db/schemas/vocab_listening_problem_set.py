@@ -16,7 +16,11 @@ class VocabListeningProblemSet(Base):
     problem_count: Mapped[int] = mapped_column()
 
     # Relationships
-    problems: Mapped[List["VocabListeningProblem"]] = relationship()
+    collection: Mapped["VocabListeningProblemSets"] = relationship(back_populates="problem_sets")
+    problems: Mapped[List["VocabListeningProblem"]] = relationship(
+        back_populates="problem_set",
+        cascade="all, delete-orphan"
+    )
 
     def to_model(self) -> VocabListeningProblemSetResponse:
         return VocabListeningProblemSetResponse(

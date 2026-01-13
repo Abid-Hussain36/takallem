@@ -1,6 +1,6 @@
 from typing import List
 from sqlalchemy import ForeignKey, String, ARRAY
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.db.database import Base
 from app.models.db.problem.discrimination_problem_response import DiscriminationProblemResponse
 
@@ -16,6 +16,9 @@ class DiscriminationProblem(Base):
     incorrect_word_audio: Mapped[str] = mapped_column(String)
     answer_choices: Mapped[List[str]] = mapped_column(ARRAY(String), default=[])
     correct_answer: Mapped[str] = mapped_column(String)
+
+    # Relationships
+    problem_set: Mapped["DiscriminationProblemSet"] = relationship(back_populates="problems")
 
     def to_model(self) -> DiscriminationProblemResponse:
         return DiscriminationProblemResponse(

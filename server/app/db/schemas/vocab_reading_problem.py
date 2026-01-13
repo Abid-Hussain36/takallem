@@ -16,6 +16,7 @@ class VocabReadingProblem(Base):
     answer_choices: Mapped[List[str]] = mapped_column(ARRAY(String), default=[])
 
     # Relationships
+    problem_set: Mapped["VocabReadingProblemSet"] = relationship(back_populates="problems")
     vocab_word: Mapped["VocabWord"] = relationship()
 
     def to_model(self) -> VocabReadingProblemResponse:

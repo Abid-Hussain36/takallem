@@ -14,7 +14,10 @@ class WordPronounciationProblemSet(Resource):
     problem_count: Mapped[int] = mapped_column()
 
     # Relationships
-    problems: Mapped[List["WordPronounciationProblem"]] = relationship()
+    problems: Mapped[List["WordPronounciationProblem"]] = relationship(
+        back_populates="problem_set",
+        cascade="all, delete-orphan"
+    )
 
     __mapper_args__ = {
         "polymorphic_identity": ResourceType.WORD_PRONOUNCIATION_PROBLEM_SET

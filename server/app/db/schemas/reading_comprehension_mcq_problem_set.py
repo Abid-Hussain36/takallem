@@ -16,8 +16,11 @@ class ReadingComprehensionMCQProblemSet(Resource):
     problem_count: Mapped[int] = mapped_column()
 
     # Relationships
-    problems: Mapped[List["ReadingComprehensionMCQProblem"]] = relationship()
-    text: Mapped["ReadingComprehensionText"] = relationship()
+    problems: Mapped[List["ReadingComprehensionMCQProblem"]] = relationship(
+        back_populates="problem_set",
+        cascade="all, delete-orphan"
+    )
+    text: Mapped["ReadingComprehensionText"] = relationship(back_populates="mcq_problem_sets")
 
     __mapper_args__ = {
         "polymorphic_identity": ResourceType.READING_COMPREHENSION_MCQ_PROBLEM_SET

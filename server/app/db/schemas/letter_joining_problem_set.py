@@ -14,7 +14,10 @@ class LetterJoiningProblemSet(Resource):
     problem_count: Mapped[int] = mapped_column()
 
     # Relationships
-    problems: Mapped[List["LetterJoiningProblem"]] = relationship()
+    problems: Mapped[List["LetterJoiningProblem"]] = relationship(
+        back_populates="problem_set",
+        cascade="all, delete-orphan"
+    )
 
     __mapper_args__ = {
         "polymorphic_identity": ResourceType.LETTER_JOINING_PROBLEM_SET

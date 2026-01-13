@@ -1,6 +1,6 @@
 from typing import List
 from sqlalchemy import ForeignKey, String, ARRAY
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.db.database import Base
 from app.models.db.problem.reading_comprehension_mcq_problem_response import ReadingComprehensionMCQProblemResponse
 
@@ -16,6 +16,9 @@ class ReadingComprehensionMCQProblem(Base):
     question_audio: Mapped[str] = mapped_column(String)
     correct_answer: Mapped[str] = mapped_column(String)
     answer_choices: Mapped[List[str]] = mapped_column(ARRAY(String), default=[])
+
+    # Relationships
+    problem_set: Mapped["ReadingComprehensionMCQProblemSet"] = relationship(back_populates="problems")
 
     def to_model(self) -> ReadingComprehensionMCQProblemResponse:
         return ReadingComprehensionMCQProblemResponse(

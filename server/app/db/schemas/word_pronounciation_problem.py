@@ -1,5 +1,5 @@
 from sqlalchemy import ForeignKey, String
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.db.database import Base
 from app.models.db.problem.word_pronounciation_problem_response import WordPronounciationProblemResponse
 
@@ -14,6 +14,9 @@ class WordPronounciationProblem(Base):
     question: Mapped[str] = mapped_column(String)
     word: Mapped[str] = mapped_column(String)
     word_audio: Mapped[str] = mapped_column(String)
+
+    # Relationships
+    problem_set: Mapped["WordPronounciationProblemSet"] = relationship(back_populates="problems")
 
     def to_model(self) -> WordPronounciationProblemResponse:
         return WordPronounciationProblemResponse(

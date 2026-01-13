@@ -17,7 +17,11 @@ class VocabSpeakingProblemSet(Base):
     gender: Mapped[Gender] = mapped_column(Enum(Gender))
 
     # Relationships
-    problems: Mapped[List["VocabSpeakingProblem"]] = relationship()
+    collection: Mapped["VocabSpeakingProblemSets"] = relationship(back_populates="problem_sets")
+    problems: Mapped[List["VocabSpeakingProblem"]] = relationship(
+        back_populates="problem_set",
+        cascade="all, delete-orphan"
+    )
 
     def to_model(self) -> VocabSpeakingProblemSetResponse:
         return VocabSpeakingProblemSetResponse(

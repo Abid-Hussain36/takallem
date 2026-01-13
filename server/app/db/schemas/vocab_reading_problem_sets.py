@@ -14,7 +14,10 @@ class VocabReadingProblemSets(Resource):
     set_limit: Mapped[int] = mapped_column()
 
     # Relationship
-    problem_sets: Mapped[List["VocabReadingProblemSet"]] = relationship()
+    problem_sets: Mapped[List["VocabReadingProblemSet"]] = relationship(
+        back_populates="collection",
+        cascade="all, delete-orphan"
+    )
 
     __mapper_args__ = {
         "polymorphic_identity": ResourceType.VOCAB_READING_PROBLEM_SETS

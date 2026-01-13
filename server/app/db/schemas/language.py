@@ -16,8 +16,14 @@ class Language(Base):
     text_color: Mapped[str] = mapped_column(String)
 
     # Relatonships
-    dialects: Mapped[List["Dialect"]] = relationship()
-    courses: Mapped[List["Course"]] = relationship()
+    dialects: Mapped[List["Dialect"]] = relationship(
+        back_populates="language",
+        cascade="all, delete-orphan"
+    )
+    courses: Mapped[List["Course"]] = relationship(
+        back_populates="language",
+        cascade="all, delete-orphan"
+    )
 
     def to_model(self) -> LanguageResponse:
         return LanguageResponse(

@@ -12,7 +12,10 @@ class VocabLecture(Resource):
     id: Mapped[int] = mapped_column(ForeignKey("resources.id", ondelete="CASCADE"), primary_key=True)
 
     # Relationships
-    vocab_words: Mapped[List["VocabWord"]] = relationship()  # List of vocab words covered
+    vocab_words: Mapped[List["VocabWord"]] = relationship(
+        back_populates="lecture",
+        cascade="all, delete-orphan"
+    )
 
     __mapper_args__ = {
         "polymorphic_identity": ResourceType.VOCAB_LECTURE

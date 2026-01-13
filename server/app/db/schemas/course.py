@@ -1,5 +1,5 @@
 from sqlalchemy import Enum, ForeignKey, String
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.db.database import Base
 from app.db.enums import AvailableCourse
 from app.models.db.general_resource.course_response import CourseResponse
@@ -16,6 +16,9 @@ class Course(Base):
     total_modules: Mapped[int] = mapped_column()
     image: Mapped[str] = mapped_column(String)
     text_color: Mapped[str] = mapped_column(String)
+
+    # Relationships
+    language: Mapped["Language"] = relationship(back_populates="courses")
 
     def to_model(self) -> CourseResponse:
         return CourseResponse(

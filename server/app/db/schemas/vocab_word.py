@@ -1,5 +1,5 @@
 from sqlalchemy import ForeignKey, Integer, String, Enum
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.db.database import Base
 from app.db.enums import AvailableCourse
 from app.models.db.vocab.vocab_word_response import VocabWordResponse
@@ -19,6 +19,9 @@ class VocabWord(Base):
     language: Mapped[str] = mapped_column(String)
     dialect: Mapped[str | None] = mapped_column(String)
     vocab_audio: Mapped[str] = mapped_column(String)
+
+    # Relationships
+    lecture: Mapped["VocabLecture"] = relationship(back_populates="vocab_words")
 
     def to_model(self) -> VocabWordResponse:
         return VocabWordResponse(

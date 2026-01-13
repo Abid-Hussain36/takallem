@@ -14,7 +14,10 @@ class LetterRecognitionProblemSet(Resource):
     problem_count: Mapped[int] = mapped_column()
 
     # Relationships
-    problems: Mapped[List["LetterRecognitionProblem"]] = relationship()
+    problems: Mapped[List["LetterRecognitionProblem"]] = relationship(
+        back_populates="problem_set",
+        cascade="all, delete-orphan"
+    )
 
     __mapper_args__ = {
         "polymorphic_identity": ResourceType.LETTER_RECOGNITION_PROBLEM_SET

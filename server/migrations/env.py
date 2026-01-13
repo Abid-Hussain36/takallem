@@ -17,6 +17,7 @@ from app.db.schemas.resource import Resource
 from app.db.schemas.module import Module
 from app.db.schemas.vocab_word import VocabWord
 from app.db.schemas.vocab_lecture import VocabLecture
+from app.db.schemas.letter_writing_sequence import LetterWritingSequence
 from app.db.schemas.vocab_speaking_problem import VocabSpeakingProblem
 from app.db.schemas.vocab_speaking_problem_set import VocabSpeakingProblemSet
 from app.db.schemas.vocab_speaking_problem_sets import VocabSpeakingProblemSets

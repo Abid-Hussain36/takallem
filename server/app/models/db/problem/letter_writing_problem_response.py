@@ -1,12 +1,13 @@
 from pydantic import BaseModel
 from typing import List
+from app.models.db.lecture.letter_writing_sequence_response import LetterWritingSequenceResponse
 
 
 class LetterWritingProblemResponse(BaseModel):
     id: int
     problem_set_id: int
-    word: str
+    letter: str
     position: str
     reference_writing: str
-    writing_sequence: List[str]
+    writing_sequence: LetterWritingSequenceResponse
 

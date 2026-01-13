@@ -16,6 +16,7 @@ class VocabSpeakingProblem(Base):
     question: Mapped[str] = mapped_column(String)
     
     # Relationships
+    problem_set: Mapped["VocabSpeakingProblemSet"] = relationship(back_populates="problems")
     vocab_words: Mapped[List["VocabWord"]] = relationship(
         secondary=vocab_speaking_problem_word
     )

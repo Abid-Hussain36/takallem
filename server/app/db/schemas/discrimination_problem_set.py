@@ -14,7 +14,10 @@ class DiscriminationProblemSet(Resource):
     problem_count: Mapped[int] = mapped_column()
 
     # Relationships
-    problems: Mapped[List["DiscriminationProblem"]] = relationship()
+    problems: Mapped[List["DiscriminationProblem"]] = relationship(
+        back_populates="problem_set",
+        cascade="all, delete-orphan"
+    )
 
     __mapper_args__ = {
         "polymorphic_identity": ResourceType.DISCRIMINATION_PROBLEM_SET
