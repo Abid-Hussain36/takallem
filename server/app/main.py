@@ -1,4 +1,5 @@
 from fastapi import FastAPI, Depends
+from fastapi.middleware.cors import CORSMiddleware  # Add this import
 from sqlalchemy.orm import Session
 from sqlalchemy import text
 from dotenv import load_dotenv
@@ -15,6 +16,19 @@ from app.db.database import get_db
 
 app = FastAPI()
 
+# Creates a Middleware to allow CORS to accept requests from the client running locally.
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:3000",      # Next.js dev server
+        "http://127.0.0.1:3000",      # Alternative localhost
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],              # Allow all HTTP methods
+    allow_headers=["*"],              # Allow all headers
+)
+
+# Makes all the routes from the routers available.
 app.include_router(letter_router, prefix="/letter")
 app.include_router(vocab_router, prefix="/vocab")
 app.include_router(auth_router, prefix="/auth")

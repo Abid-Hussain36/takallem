@@ -28,10 +28,16 @@ class UserService:
             db.rollback() # Undo any changes we made if we have an error like user already existing
             raise ValueError("User with this email or username already exists")
 
-    
-    def get_user_by_id(self, db: Session, id: int) -> UserResponse | None:
-        """Gets the user by id"""
-        user = db.query(User).filter(User.id == id).first()
+    def get_user_by_email(self, db: Session, email: str) -> UserResponse | None:
+        """Gets the user by email address"""
+        user = db.query(User).filter(User.email == email).first()
+        if user:
+            return user.to_model() # The lazy load is triggered for progresses cause we access the relational field.
+        return None
+
+    def get_user_by_id(self, db: Session, user_id: int) -> UserResponse | None:
+        """Gets the user by database ID"""
+        user = db.query(User).filter(User.id == user_id).first()
         if user:
             return user.to_model() # The lazy load is triggered for progresses cause we access the relational field.
         return None

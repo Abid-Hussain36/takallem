@@ -9,7 +9,7 @@ class LetterPronounciationResponse(BaseModel):
     mistake_tags: List[str]
     performance_reflection: str
 
-class LetterPronounciationExplainInput(BaseModel):
+class LetterWordPronounciationExplainInput(BaseModel):
     query: str
     word: str
     status: Literal["pass", "fail"]

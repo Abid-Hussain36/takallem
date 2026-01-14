@@ -1,4 +1,4 @@
-import { Gender } from "../enums"
+import { AvailableCourse, Gender } from "../enums"
 
 export interface SignupRequest {
     email: string
@@ -7,4 +7,6 @@ export interface SignupRequest {
     first_name: string
     last_name: string | null
     gender: Gender
+    current_course: AvailableCourse | null
+    languages_learning: string[]
 }

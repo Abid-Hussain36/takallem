@@ -36,6 +36,7 @@ Base = declarative_base()
 # Dependency for db related FastAPI routes that allow it to do DB operations with the created session
 # Session is closed after the route finishes - Session created JIT for the route operation
 def get_db():
+    """Creates a Session when an endpoint is called, and the session is closed when the route completes."""
     db = SessionLocal()  # Create a new session
     try:
         yield db  # Provide the session to the route without returning! Once route finishes, we continue the function

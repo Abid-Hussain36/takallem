@@ -1,4 +1,4 @@
-from typing import Union
+from typing import Union, Dict
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 from app.models.auth.signup_request import SignupRequest
@@ -6,10 +6,14 @@ from app.models.db.user.user_response import UserResponse
 from app.models.auth.login_request import LoginRequest
 from app.utils.supabase import get_supabase_client
 from app.services.user_service import UserService
+import logging
+from app.models.auth.auth_response import AuthResponse
+
+logger = logging.getLogger(__name__) # Creates a logger that's titled with the module being logged
 
 
 class AuthService:
-    def signup(self, user_data: SignupRequest, db: Session, service: UserService) -> UserResponse:
+    def signup(self, user_data: SignupRequest, db: Session, service: UserService) -> AuthResponse:
         try:
             supabase_client = get_supabase_client()
             auth_response = supabase_client.auth.sign_up({
@@ -25,7 +29,7 @@ class AuthService:
 
             user = service.create_user(db, user_data)
 
-            return user
+            return AuthResponse(user=user, token=auth_response.session.access_token, token_type="bearer")
         except ValueError as e:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -40,7 +44,7 @@ class AuthService:
             )
 
     
-    def login(self, user_data: LoginRequest, db: Session, service: UserService) -> Union[UserResponse, None]:
+    def login(self, user_data: LoginRequest, db: Session, service: UserService) -> AuthResponse:
         try:
             supabase_client = get_supabase_client()
             auth_response = supabase_client.auth.sign_in_with_password({
@@ -62,7 +66,7 @@ class AuthService:
                     detail="User profile not found"
                 )
 
-            return user
+            return AuthResponse(user=user, token=auth_response.session.access_token, token_type="bearer")
         except HTTPException:
             raise
         except Exception as e:

@@ -1,11 +1,12 @@
 from typing import Union
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from app.models.db.user.user_response import UserResponse
 from app.db.database import get_db
 from app.models.auth.signup_request import SignupRequest
 from app.services.user_service import UserService
 from app.utils.di import get_user_service
+from app.utils.auth import get_current_user_email
 
 
 user_router = APIRouter()
@@ -20,15 +21,15 @@ def create_user(
     return service.create_user(db, user_data)
 
 
-@user_router.get("/{id}", response_model=Union[UserResponse, None])
-def get_user(
-    id: int,
+@user_router.get("/me", response_model=UserResponse)
+def get_authed_user(
+    email: str = Depends(get_current_user_email),
     db: Session = Depends(get_db),
-    service: UserService = Depends(get_user_service)
-) -> Union[UserResponse, None]:
-    user = service.get_user_by_id(db, id)
+    service: UserService = Depends(get_user_service),
+) -> UserResponse:
+    """Get the currently authenticated user's profile by their email"""
+    user = service.get_user_by_email(db, email)
     if not user:
-        from fastapi import HTTPException, status
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="User not found"

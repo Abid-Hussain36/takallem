@@ -10,5 +10,5 @@ class SignupRequest(BaseModel):
     first_name: str
     last_name: str | None = None
     gender: Gender
-    current_course: AvailableCourse
+    current_course: AvailableCourse | None = None
     languages_learning: List[str] = []
