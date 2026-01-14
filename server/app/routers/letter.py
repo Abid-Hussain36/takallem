@@ -1,4 +1,3 @@
-from re import U
 from typing import Union, List
 from fastapi import APIRouter, UploadFile, File, Form, Depends
 from app.models.letter.pronounciation import LetterPronounciationResponse, LetterPronounciationExplainInput, LetterPronounciationExplainResponse

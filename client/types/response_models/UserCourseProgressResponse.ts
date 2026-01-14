@@ -1,0 +1,12 @@
+import { AvailableCourse } from "../enums";
+
+export interface UserCourseProgressResponse {
+    id: number;
+    course_name: AvailableCourse;
+    dialect: string | null;
+    total_modules: number;
+    curr_module: number;
+    covered_words: Record<string, number>;
+    problem_counter: number;
+    current_vocab_problem_set: number;
+}

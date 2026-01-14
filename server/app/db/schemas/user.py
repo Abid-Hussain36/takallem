@@ -16,7 +16,7 @@ class User(Base):
     first_name: Mapped[str] = mapped_column(String(255))
     last_name: Mapped[str | None] = mapped_column(String(255))
     gender: Mapped[Gender] = mapped_column(Enum(Gender))
-    current_course: Mapped[AvailableCourse] = mapped_column(Enum(AvailableCourse))
+    current_course: Mapped[AvailableCourse | None] = mapped_column(Enum(AvailableCourse))
     languages_learning: Mapped[List[str]] = mapped_column(ARRAY(String), default=[])  # The list of languages the user is currently learning
     
     # Relationships
@@ -35,6 +35,8 @@ class User(Base):
             username=self.username,
             first_name=self.first_name,
             last_name=self.last_name,
+            gender=self.gender,
+            current_course=self.current_course,
             languages_learning=self.languages_learning,
             course_progresses=[course_progress.to_model() for course_progress in self.course_progresses]
         )
