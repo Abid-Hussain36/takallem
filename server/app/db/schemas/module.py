@@ -1,8 +1,12 @@
+from typing import TYPE_CHECKING
 from sqlalchemy import ForeignKey, Index, String, UniqueConstraint, Enum
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.db.database import Base
 from app.db.enums import AvailableCourse
 from app.models.db.general_resource.module_response import ModuleResponse
+
+if TYPE_CHECKING:
+    from app.db.schemas.resource import Resource
 
 
 class Module(Base):
@@ -34,5 +38,5 @@ class Module(Base):
             section=self.section,
             title=self.title,
             number=self.number,
-            resource_id=self.resource_id
+            resource=self.resource.to_model()  # Include the actual polymorphic resource
         )

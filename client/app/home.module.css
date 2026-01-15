@@ -263,6 +263,15 @@
     font-weight: 600;
 }
 
+.languageTagMastered {
+    padding: 0.5rem 1rem;
+    background: linear-gradient(135deg, #fbc2eb 0%, #a6c1ee 100%);
+    color: white;
+    border-radius: 50px;
+    font-size: 0.875rem;
+    font-weight: 600;
+}
+
 .emptyState {
     color: #a0aec0;
     text-align: center;

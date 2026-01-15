@@ -12,3 +12,4 @@ class SignupRequest(BaseModel):
     gender: Gender
     current_course: AvailableCourse | None = None
     languages_learning: List[str] = []
+    languages_learned: List[str] = []

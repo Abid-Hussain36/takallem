@@ -10,5 +10,6 @@ export interface UserResponse {
     gender: Gender;
     current_course: AvailableCourse | null;
     languages_learning: string[];
+    languages_learned: string[];
     course_progresses: UserCourseProgressResponse[];
 }

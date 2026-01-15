@@ -129,6 +129,28 @@ export default function Home() {
 
           <div className={styles.card}>
             <div className={styles.cardHeader}>
+              <div className={styles.iconWrapper} style={{background: 'linear-gradient(135deg, #fbc2eb 0%, #a6c1ee 100%)'}}>
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.536-4.464a.75.75 0 10-1.061-1.061 3.5 3.5 0 01-4.95 0 .75.75 0 00-1.06 1.06 5 5 0 007.07 0zM9 8.5c0 .828-.448 1.5-1 1.5s-1-.672-1-1.5S7.448 7 8 7s1 .672 1 1.5zm3 1.5c.552 0 1-.672 1-1.5S12.552 7 12 7s-1 .672-1 1.5.448 1.5 1 1.5z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <h3 className={styles.cardTitle}>Languages Mastered</h3>
+            </div>
+            <div className={styles.cardContent}>
+              {user.languages_learned && user.languages_learned.length > 0 ? (
+                <div className={styles.languagesList}>
+                  {user.languages_learned.map((lang, index) => (
+                    <span key={index} className={styles.languageTagMastered}>{lang} ✓</span>
+                  ))}
+                </div>
+              ) : (
+                <p className={styles.emptyState}>Complete your first language to see it here!</p>
+              )}
+            </div>
+          </div>
+
+          <div className={styles.card}>
+            <div className={styles.cardHeader}>
               <div className={styles.iconWrapper} style={{background: 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)'}}>
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
                   <path fillRule="evenodd" d="M6 3.75A2.75 2.75 0 018.75 1h2.5A2.75 2.75 0 0114 3.75v.443c.572.055 1.14.122 1.706.2C17.053 4.582 18 5.75 18 7.07v3.469c0 1.126-.694 2.191-1.83 2.54-1.952.599-4.024.921-6.17.921s-4.219-.322-6.17-.921C2.694 12.73 2 11.665 2 10.539V7.07c0-1.321.947-2.489 2.294-2.676A41.047 41.047 0 016 4.193V3.75zm6.5 0v.325a41.622 41.622 0 00-5 0V3.75c0-.69.56-1.25 1.25-1.25h2.5c.69 0 1.25.56 1.25 1.25zM10 10a1 1 0 00-1 1v.01a1 1 0 001 1h.01a1 1 0 001-1V11a1 1 0 00-1-1H10z" clipRule="evenodd" />

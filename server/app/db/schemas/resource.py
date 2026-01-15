@@ -24,8 +24,11 @@ class Resource(Base):
     module: Mapped[List["Module"]] = relationship(back_populates="resource", cascade="all, delete-orphan")
 
     def to_model(self) -> ResourceResponse:
+        """
+        This method should be overridden by subclasses to return their specific response types.
+        The base Resource class returns a minimal ResourceResponse.
+        """
         return ResourceResponse(
             id=self.id,
-            resource_type=self.resource_type,
-            module=[m.to_model() for m in self.module]
+            resource_type=self.resource_type
         )

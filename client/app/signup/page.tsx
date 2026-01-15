@@ -70,7 +70,8 @@ export default function Signup() {
                 last_name: submittedLastName,
                 gender: gender!,
                 current_course: null,
-                languages_learning: []
+                languages_learning: [],
+                languages_learned: []
             };
 
             console.log(process.env.NEXT_PUBLIC_SERVER_URL ? `${process.env.NEXT_PUBLIC_SERVER_URL}/auth/signup` : "URL failed to fetch from env");

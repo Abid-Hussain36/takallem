@@ -13,4 +13,5 @@ class UserResponse(BaseModel):
     gender: Gender
     current_course: AvailableCourse | None = None
     languages_learning: List[str]
+    languages_learned: List[str]
     course_progresses: List[UserCourseProgressResponse]
