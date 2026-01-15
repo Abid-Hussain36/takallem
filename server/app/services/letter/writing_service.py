@@ -44,7 +44,13 @@ class LetterWritingService:
             response_format={"type": "json_object"},
         )
 
-        qa_response = {}
+        # Initialize with default error response
+        qa_response = WritingQAResponse(
+            is_usable=False,
+            confidence=0.0,
+            reasons=["Error processing image"],
+            capture_tips="Please ensure the image is clear and try again."
+        )
 
         try:
             qa_response_content = qa_chat_response.choices[0].message.content
@@ -55,8 +61,8 @@ class LetterWritingService:
                 reasons=qa_response_obj["reasons"],
                 capture_tips=qa_response_obj["capture_tips"]
             )
-        except Exception:
-            print("QA error when checking letter writing.")
+        except Exception as e:
+            print(f"QA error when checking letter writing: {e}")
 
         # If QA says the image is not good enough, we ask the user to retake their writing image
         if (not qa_response.is_usable) or qa_response.confidence < thresholds["baseline_qa_confidence"]:
@@ -70,8 +76,21 @@ class LetterWritingService:
             response_format={"type": "json_object"}
         )
 
-        writing_eval_response = {}
         status = "fail"
+        # Initialize with default error response
+        writing_eval_response = LetterWritingResponse(
+            status=status,
+            scores=LetterHandwritingScores(
+                legibility=0.0,
+                form_accuracy=0.0,
+                dots_diacritics=0.0,
+                baseline_proportion=0.0,
+                overall=0.0
+            ),
+            feedback="An error occurred while evaluating your writing. Please try again.",
+            mistake_tags=[],
+            performance_reflection=""
+        )
 
         try:
             writing_eval_response_content = writing_eval_chat_response.choices[0].message.content
@@ -100,8 +119,8 @@ class LetterWritingService:
                 mistake_tags=writing_eval_response_obj["mistake_tags"],
                 performance_reflection=writing_eval_response_obj["performance_reflection"]
             )
-        except Exception:
-            print("Error when parsing response of letter written evaluation.")
+        except Exception as e:
+            print(f"Error when parsing response of letter written evaluation: {e}")
 
         return writing_eval_response
 
@@ -109,7 +128,7 @@ class LetterWritingService:
     async def check_letter_joining(self, user_image: UploadFile, letter_list: List[str], target_word: str) -> Union[LetterJoiningResponse, WritingPhotoRetakeResponse]:
         thresholds = {
             "baseline_qa_confidence": 55.0,
-            "baseline_eval_confidence": 0.62,
+            "baseline_eval_confidence": 62.0,
             "connection_accuracy": 85.0,
             "positional_forms": 82.0,
             "dots_diacritics": 90.0,
@@ -133,7 +152,13 @@ class LetterWritingService:
             response_format={"type": "json_object"}
         )
 
-        qa_response = {}
+        # Initialize with default error response
+        qa_response = WritingQAResponse(
+            is_usable=False,
+            confidence=0.0,
+            reasons=["Error processing image"],
+            capture_tips="Please ensure the image is clear and try again."
+        )
 
         try:
             qa_response_content = qa_chat_response.choices[0].message.content
@@ -144,8 +169,8 @@ class LetterWritingService:
                 reasons=qa_response_obj["reasons"],
                 capture_tips=qa_response_obj["capture_tips"]
             )
-        except Exception:
-            print("QA error when checking letter joining.")
+        except Exception as e:
+            print(f"QA error when checking letter joining: {e}")
 
         # If QA says the image is not good enough, we ask the user to retake their writing image
         if (not qa_response.is_usable) or qa_response.confidence < thresholds["baseline_qa_confidence"]:
@@ -159,8 +184,22 @@ class LetterWritingService:
             response_format={"type": "json_object"}
         )
 
-        joining_response = {}
         status = "fail"
+        # Initialize with default error response
+        joining_response = LetterJoiningResponse(
+            status=status,
+            scores=LetterJoiningScores(
+                connection_accuracy=0.0,
+                positional_forms=0.0,
+                spacing_flow=0.0,
+                baseline_consistency=0.0,
+                dots_diacritics=0.0,
+                overall=0.0
+            ),
+            feedback="An error occurred while evaluating your letter joining. Please try again.",
+            mistake_tags=[],
+            performance_reflection=""
+        )
 
         try:
             joining_content = joining_chat_response.choices[0].message.content
@@ -191,8 +230,8 @@ class LetterWritingService:
                 mistake_tags=joining_obj["mistake_tags"],
                 performance_reflection=joining_obj["performance_reflection"]
             )
-        except Exception:
-            print("Error when parsing joining chat response.")
+        except Exception as e:
+            print(f"Error when parsing joining chat response: {e}")
 
         return joining_response
 
@@ -200,7 +239,7 @@ class LetterWritingService:
     async def check_dictation(self, user_image: UploadFile, target_word: str) -> Union[DictationResponse, WritingPhotoRetakeResponse]:
         thresholds = {
             "baseline_qa_confidence": 70.0,
-            "baseline_eval_confidence": 0.65,
+            "baseline_eval_confidence": 65.0,
             "word_accuracy": 90.0,
             "letter_identity": 90.0,
             "joining_quality": 80.0,
@@ -225,7 +264,13 @@ class LetterWritingService:
             response_format={"type": "json_object"}
         )
 
-        qa_response = {}
+        # Initialize with default error response
+        qa_response = WritingQAResponse(
+            is_usable=False,
+            confidence=0.0,
+            reasons=["Error processing image"],
+            capture_tips="Please ensure the image is clear and try again."
+        )
 
         try:
             qa_response_content = qa_chat_response.choices[0].message.content
@@ -236,8 +281,8 @@ class LetterWritingService:
                 reasons=qa_response_obj["reasons"],
                 capture_tips=qa_response_obj["capture_tips"]
             )
-        except Exception:
-            print("QA error when checking dictation.")
+        except Exception as e:
+            print(f"QA error when checking dictation: {e}")
 
         # If QA says the image is not good enough, we ask the user to retake their writing image
         if (not qa_response.is_usable) or qa_response.confidence < thresholds["baseline_qa_confidence"]:
@@ -251,8 +296,24 @@ class LetterWritingService:
             response_format={"type": "json_object"}
         )
 
-        dictation_response = {}
         status = "fail"
+        # Initialize with default error response
+        dictation_response = DictationResponse(
+            status=status,
+            detected_word="",
+            scores=DictationScores(
+                word_accuracy=0.0,
+                letter_identity=0.0,
+                joining_quality=0.0,
+                legibility=0.0,
+                dots_diacritics=0.0,
+                baseline_spacing=0.0,
+                overall=0.0
+            ),
+            feedback="An error occurred while evaluating your dictation. Please try again.",
+            mistake_tags=[],
+            performance_reflection=""
+        )
 
         try:
             dictation_content = dictation_chat_response.choices[0].message.content
@@ -287,7 +348,7 @@ class LetterWritingService:
                 mistake_tags=dictation_obj["mistake_tags"],
                 performance_reflection=dictation_obj["performance_reflection"]
             )
-        except Exception:
-            print("Error when parsing dictation chat response.")
+        except Exception as e:
+            print(f"Error when parsing dictation chat response: {e}")
 
         return dictation_response

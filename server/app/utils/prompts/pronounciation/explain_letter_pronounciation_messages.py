@@ -1,8 +1,8 @@
 from typing import List
 
-def build_explain_pronounciation_messages(
+def build_explain_letter_pronounciation_messages(
     query: str,
-    word: str,
+    letter: str,
     status: str,
     transcription: str,
     previous_feedback: str,
@@ -13,10 +13,10 @@ def build_explain_pronounciation_messages(
     students' questions in a clear, intuitive, actionable way to help them effectively improve their pronounciation and/or expand their understanding of the Arabic language. You are also a skilled collaborator \
     who is able to effectively leverage the notes of their collegues regarding the student's pronounciation to better answer their questions. The following is information on the data you're provided:
     query: The question the user asks.
-    word: The word the user was tasked with pronouncing.
+    letter: The letter the user was tasked with pronouncing.
     status: Whether the user's pronounciation was accepable. Can be either pass or fail.
-    transcription: A transcription of what the user said when attempting to pronounce the word.
-    previous_feedback: The feedback a fellow teacher gave on the student's pronounciation of the word.
+    transcription: A transcription of what the user said when attempting to pronounce the letter.
+    previous_feedback: The feedback a fellow teacher gave on the student's pronounciation of the letter.
     mistake_tags: A list of strings of tags that refer to common pronounciation errors.
     performance_reflection: A summary of the user's pronounciation and mistakes made by your fellow teacher who evaluated the student's pronounciation.
 
@@ -32,7 +32,7 @@ def build_explain_pronounciation_messages(
 
     user_content = f"""Given the following data on the user's question and their pronounciation, answer their question:
     query: {query}
-    word: {word}
+    letter: {letter}
     status: {status}
     transcription: {transcription}
     previous_feedback: {previous_feedback}

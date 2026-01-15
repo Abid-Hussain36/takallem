@@ -9,6 +9,15 @@ class LetterPronounciationResponse(BaseModel):
     mistake_tags: List[str]
     performance_reflection: str
 
+class LetterPronounciationExplainInput(BaseModel):
+    query: str
+    letter: str
+    status: Literal["pass", "fail"]
+    transcription: str
+    previous_feedback: str
+    mistake_tags: List[str]
+    performance_reflection: str
+
 class LetterWordPronounciationExplainInput(BaseModel):
     query: str
     word: str

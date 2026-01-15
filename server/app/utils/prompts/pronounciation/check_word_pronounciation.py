@@ -1,4 +1,4 @@
-def build_check_pronounciation_messages(
+def build_check_word_pronounciation_messages(
         word: str,
         transcription: str, 
         accuracy: float, 
