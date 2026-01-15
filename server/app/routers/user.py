@@ -9,7 +9,7 @@ from app.utils.di import get_user_service
 from app.utils.auth import get_current_user_email
 from app.models.general.error_message import ErrorMessage
 from app.models.general.success_message import SuccessMessage
-from app.db.enums import AvailableCourse, Gender
+from app.db.enums import AvailableCourse, Gender, AvailableDialect
 
 
 user_router = APIRouter()
@@ -26,7 +26,7 @@ def create_user(
 
 @user_router.get("/me", response_model=UserResponse)
 def get_authed_user(
-    email: str = Depends(get_current_user_email),
+    email: str = Depends(get_current_user_email), # Takes in the header auth token and validates by fetching the user email
     db: Session = Depends(get_db),
     service: UserService = Depends(get_user_service),
 ) -> UserResponse:
@@ -59,6 +59,17 @@ def update_current_course(
 ) -> UserResponse:
     """Updates the current course field for user"""
     return service.update_current_course(db, id, course)
+
+
+@user_router.put("/{id}/current-dialect/{dialect}", response_model=UserResponse)
+def update_current_dialect(
+    id: int,
+    dialect: AvailableDialect,
+    db: Session = Depends(get_db),
+    service: UserService = Depends(get_user_service)
+) -> UserResponse:
+    """Updates the current dialect field for user"""
+    return service.update_current_dialect(db, id, dialect)
 
 
 @user_router.put("/{id}/language-learning/add/{language}", response_model=UserResponse)

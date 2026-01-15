@@ -16,6 +16,7 @@ class PronounciationService():
         user_audio: UploadFile,
         letter: str
     ) -> LetterPronounciationResponse:
+        """Takes in the user audio and letter to be pronounced and evaluates the performance."""
         # Gets the bytes of the audio file
         raw_bytes = await user_audio.read()
         print("Got file")
@@ -36,8 +37,8 @@ class PronounciationService():
         }
 
         # Creates a base64 object out of the config object
-        pronounciation_config_json = json.dumps(pronounciation_config).encode("utf-8")
-        pronounciation_config_base64 = base64.b64encode(pronounciation_config_json).decode()
+        pronounciation_config_json = json.dumps(pronounciation_config).encode("utf-8") # Creates JSON string from config object
+        pronounciation_config_base64 = base64.b64encode(pronounciation_config_json).decode() # Creates base64 string
 
         AZURE_SUBSCRIPTION_KEY = os.getenv("AZURE_SUBSCRIPTION_KEY")
         if not AZURE_SUBSCRIPTION_KEY:
@@ -54,7 +55,6 @@ class PronounciationService():
         # Scores the user's pronounciation of the letter
         try:
             async with httpx.AsyncClient() as client:
-                print(f"Headers: {headers}")
                 pronounciation_response = await client.post(
                     azure_speech_url,
                     headers=headers,
@@ -62,9 +62,6 @@ class PronounciationService():
                     timeout=30.0
                 )
                 print("Made Azure API request")
-                print(f"Status: {pronounciation_response.status_code}")
-                print(f"Headers: {pronounciation_response.headers}")
-                print(f"Body: {pronounciation_response.text}")
 
             pronounciation_response.raise_for_status()
         except httpx.HTTPStatusError as e:
@@ -94,8 +91,7 @@ class PronounciationService():
         completeness = scores.get("CompletenessScore", 0.0)
         overall_score = scores.get("PronScore", 0.0)
         status = "fail"
-        print("Got pronounciation score data")
-        print(pronounciation_response_json)
+        print("Parsed Azure output")
 
         # Provides a threshold for acceptable pronounciation
         if(
@@ -111,12 +107,11 @@ class PronounciationService():
 
         # Generates feedback for the student based on the scores
         chat_response = await openai_client.chat.completions.create(
-            model=os.getenv("LETTER_PRONOUNCIATION_MODEL") or "gpt-5.1-chat-latest",
+            model=os.getenv("LETTER_PRONOUNCIATION_MODEL") or "gpt-5.2-chat-latest",
             messages=pronounciation_messages,
             response_format={"type": "json_object"},
         )
         print("Made chat request")
-        print(chat_response)
 
         # Initialize with default error response
         pronounciation_check_response = LetterPronounciationResponse(

@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, ReactNode } from "react";
 import { UserResponse } from "@/types/response_models/UserResponse";
 
+// We outline the object being stored in our context
 interface UserContextType {
     user: UserResponse | null;
     setUser: (user: UserResponse | null) => void;

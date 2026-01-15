@@ -1,7 +1,7 @@
 from pydantic import BaseModel
 from typing import List
 from app.models.db.user.user_course_progress_response import UserCourseProgressResponse
-from app.db.enums import AvailableCourse, Gender
+from app.db.enums import AvailableCourse, Gender, AvailableDialect
 
 
 class UserResponse(BaseModel):
@@ -12,6 +12,7 @@ class UserResponse(BaseModel):
     last_name: str | None = None
     gender: Gender
     current_course: AvailableCourse | None = None
+    current_dialect: AvailableDialect | None = None
     languages_learning: List[str]
     languages_learned: List[str]
     course_progresses: List[UserCourseProgressResponse]

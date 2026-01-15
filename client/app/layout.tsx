@@ -34,9 +34,9 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
         return;
       }
 
-      // Fetch user if we have token but no user data
       if (!user) {
         try {
+          // Fetch user if we have token but no user data
           const response = await fetch(
             `${process.env.NEXT_PUBLIC_SERVER_URL}/user/me`,
             {
@@ -57,6 +57,8 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
         }
       } else if (isPublicRoute) {
         router.replace("/");
+      } else if(!user.current_course || user.current_course?.length < 1){
+        router.replace("/language_selection")
       }
 
       setIsLoading(false);

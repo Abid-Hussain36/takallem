@@ -7,6 +7,7 @@ from app.services.letter.pronounciation_service import PronounciationService
 from app.services.letter.writing_service import LetterWritingService
 
 
+# Defines functions we use to build the objects for injection.
 def get_auth_service() -> AuthService:
     return AuthService()
 

@@ -39,7 +39,7 @@ def get_db():
     """Creates a Session when an endpoint is called, and the session is closed when the route completes."""
     db = SessionLocal()  # Create a new session
     try:
-        yield db  # Provide the session to the route without returning! Once route finishes, we continue the function
+        yield db  # Provide the session to the route without returning (emitting)! Once route finishes, we continue the function
     finally:
         db.close()  # Closes the session after the route finishes
 

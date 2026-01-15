@@ -8,7 +8,7 @@ from app.models.auth.signup_request import SignupRequest
 from app.models.db.user.user_response import UserResponse
 from app.models.general.error_message import ErrorMessage
 from app.models.general.success_message import SuccessMessage
-from app.db.enums import AvailableCourse, Gender
+from app.db.enums import AvailableCourse, Gender, AvailableDialect
 
 
 class UserService:
@@ -21,6 +21,7 @@ class UserService:
             last_name=user_data.last_name,
             gender=user_data.gender,
             current_course=user_data.current_course,
+            current_dialect=user_data.current_dialect,
             languages_learning=user_data.languages_learning or [],
             languages_learned=user_data.languages_learned or []
         )
@@ -74,6 +75,22 @@ class UserService:
             )
         
         user.current_course = course
+        db.commit()
+        db.refresh(user)
+        
+        return user.to_model()
+
+    def update_current_dialect(self, db: Session, user_id: int, dialect: AvailableDialect) -> UserResponse:
+        """Updates the current dialect for a user"""
+        user = db.query(User).filter(User.id == user_id).first()
+        
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="User not found"
+            )
+        
+        user.current_dialect = dialect
         db.commit()
         db.refresh(user)
         

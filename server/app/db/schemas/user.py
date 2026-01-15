@@ -3,7 +3,7 @@ from sqlalchemy import String, ARRAY, Enum
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.db.database import Base
 from app.models.db.user.user_response import UserResponse
-from app.db.enums import AvailableCourse, Gender
+from app.db.enums import AvailableCourse, Gender, AvailableDialect
 
 
 class User(Base):
@@ -17,6 +17,7 @@ class User(Base):
     last_name: Mapped[str | None] = mapped_column(String(255))
     gender: Mapped[Gender] = mapped_column(Enum(Gender))
     current_course: Mapped[AvailableCourse | None] = mapped_column(Enum(AvailableCourse))
+    current_dialect: Mapped[AvailableDialect | None] = mapped_column(Enum(AvailableDialect))
     languages_learning: Mapped[List[str]] = mapped_column(ARRAY(String), default=[]) # The list of languages the user is currently learning
     languages_learned: Mapped[List[str]] = mapped_column(ARRAY(String), default=[]) # The list of languages the user has successfully learned on the app
     
@@ -38,6 +39,7 @@ class User(Base):
             last_name=self.last_name,
             gender=self.gender,
             current_course=self.current_course,
+            current_dialect=self.current_dialect,
             languages_learning=self.languages_learning,
             languages_learned=self.languages_learned,
             course_progresses=[course_progress.to_model() for course_progress in self.course_progresses]

@@ -70,6 +70,7 @@ export default function Signup() {
                 last_name: submittedLastName,
                 gender: gender!,
                 current_course: null,
+                current_dialect: null,
                 languages_learning: [],
                 languages_learned: []
             };
