@@ -9,5 +9,5 @@ export interface ModuleResponse {
     section: string;
     title: string;
     number: number;
-    resource: PolymorphicResource;  // Polymorphic resource with full nested data
+    resource_id: number
 }

@@ -14,3 +14,4 @@ class SignupRequest(BaseModel):
     current_dialect: AvailableDialect | None = None
     languages_learning: List[str] = []
     languages_learned: List[str] = []
+    courses_completed: List[str] = []

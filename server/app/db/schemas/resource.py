@@ -1,9 +1,12 @@
-from typing import List
+from typing import List, TYPE_CHECKING
 from sqlalchemy import Enum
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.db.database import Base
 from app.db.enums import ResourceType
 from app.models.db.general_resource.resource_response import ResourceResponse
+
+if TYPE_CHECKING:
+    from app.db.schemas.module import Module
 
 
 class Resource(Base):
@@ -20,14 +23,7 @@ class Resource(Base):
         "polymorphic_identity": None  # We cant get back just a plain resource object, only a subclass object
     }
 
-    # Relationships
-    module: Mapped[List["Module"]] = relationship(back_populates="resource", cascade="all, delete-orphan")
-
     def to_model(self) -> ResourceResponse:
-        """
-        This method should be overridden by subclasses to return their specific response types.
-        The base Resource class returns a minimal ResourceResponse.
-        """
         return ResourceResponse(
             id=self.id,
             resource_type=self.resource_type

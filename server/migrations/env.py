@@ -49,9 +49,9 @@ from app.db.schemas.reading_comprehension_mcq_problem import ReadingComprehensio
 from app.db.schemas.reading_comprehension_mcq_problem_set import ReadingComprehensionMCQProblemSet
 from app.db.schemas.reading_comprehension_writing_problem import ReadingComprehensionWritingProblem
 from app.db.schemas.reading_comprehension_writing_problem_set import ReadingComprehensionWritingProblemSet
-from app.db.schemas.language import Language
-from app.db.schemas.course import Course
-from app.db.schemas.dialect import Dialect
+from app.db.schemas.language import LanguageSchema
+from app.db.schemas.course import CourseSchema
+from app.db.schemas.dialect import DialectSchema
 from app.db.schemas.dialect_selection import DialectSelection
 from app.db.schemas.dialect_selection_dialects import dialect_selection_dialects
 

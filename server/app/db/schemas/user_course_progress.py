@@ -3,7 +3,7 @@ from sqlalchemy import ForeignKey, Index, Integer, String, UniqueConstraint, Enu
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.db.database import Base
-from app.db.enums import AvailableCourse
+from app.db.enums import AvailableCourse, AvailableDialect
 from app.models.db.user.user_course_progress_response import UserCourseProgressResponse
 
 
@@ -18,7 +18,8 @@ class UserCourseProgress(Base):
     )  # FK, Many Side
     
     course_name: Mapped[AvailableCourse] = mapped_column(Enum(AvailableCourse))
-    dialect: Mapped[str | None] = mapped_column(String)
+    dialect: Mapped[AvailableDialect | None] = mapped_column(Enum(AvailableDialect))
+    default_dialect: Mapped[AvailableDialect | None] = mapped_column(Enum(AvailableDialect))
     total_modules: Mapped[int] = mapped_column()
     curr_module: Mapped[int] = mapped_column(default=1)
     covered_words: Mapped[Dict[str, int]] = mapped_column(JSONB, default={})
@@ -30,8 +31,8 @@ class UserCourseProgress(Base):
 
     # Makes sure this table has unique rows across these fields
     __table_args__ = (
-        UniqueConstraint("user_id", "course_name", "dialect", name="uq_user_course_dialect"),
-        Index("idx_user_course_dialect", "user_id", "course_name", "dialect")
+        UniqueConstraint("user_id", "course_name", name="uq_user_course_dialect"),
+        Index("idx_user_course_dialect", "user_id", "course_name")
     )
 
     def to_model(self) -> UserCourseProgressResponse:
@@ -39,6 +40,7 @@ class UserCourseProgress(Base):
             id=self.id,
             course_name=self.course_name,
             dialect=self.dialect,
+            default_dialect=self.default_dialect,
             total_modules=self.total_modules,
             curr_module=self.curr_module,
             covered_words=self.covered_words,

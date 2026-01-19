@@ -8,12 +8,13 @@ from app.models.auth.signup_request import SignupRequest
 from app.models.db.user.user_response import UserResponse
 from app.models.general.error_message import ErrorMessage
 from app.models.general.success_message import SuccessMessage
-from app.db.enums import AvailableCourse, Gender, AvailableDialect
+from app.db.enums import AvailableCourse, AvailableLanguage, Gender, AvailableDialect
+from app.models.db.user.update_user_request import UpdateUserRequest
 
 
 class UserService:
     def create_user(self, db: Session, user_data: SignupRequest) -> UserResponse:
-        """Creates a user based on the passed in signup data and authentication id"""
+        """Creates a user based on the passed in signup data and authentication id. Used for Signup."""
         new_user = User(
             email=user_data.email,
             username=user_data.username,
@@ -23,7 +24,8 @@ class UserService:
             current_course=user_data.current_course,
             current_dialect=user_data.current_dialect,
             languages_learning=user_data.languages_learning or [],
-            languages_learned=user_data.languages_learned or []
+            languages_learned=user_data.languages_learned or [],
+            courses_completed=user_data.courses_completed or []
         )
 
         try:
@@ -36,18 +38,42 @@ class UserService:
             raise ValueError("User with this email or username already exists")
 
     def get_user_by_email(self, db: Session, email: str) -> UserResponse | None:
-        """Gets the user by email address"""
+        """Gets the user by email address. Used for Login."""
         user = db.query(User).filter(User.email == email).first()
         if user:
             return user.to_model() # The lazy load is triggered for progresses cause we access the relational field.
         return None
 
-    def get_user_by_id(self, db: Session, user_id: int) -> UserResponse | None:
-        """Gets the user by database ID"""
-        user = db.query(User).filter(User.id == user_id).first()
-        if user:
-            return user.to_model() # The lazy load is triggered for progresses cause we access the relational field.
-        return None
+    def update_user_profile(
+        self, 
+        db: Session, 
+        email: str,
+        updateUserRequest: UpdateUserRequest
+    ) -> UserResponse:
+        """Updates user profile fields"""
+        first_name = updateUserRequest.first_name
+        last_name = updateUserRequest.last_name
+        gender = updateUserRequest.gender
+
+        user = db.query(User).filter(User.email == email).first()
+        
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="User not found"
+            )
+        
+        if first_name is not None:
+            user.first_name = first_name
+        if last_name is not None:
+            user.last_name = last_name
+        if gender is not None:
+            user.gender = gender
+        
+        db.commit()
+        db.refresh(user)
+        
+        return user.to_model()
 
     def delete_user_by_email(self, db: Session, email: str) -> SuccessMessage:
         """Deletes a user by their email"""
@@ -55,18 +81,18 @@ class UserService:
         
         if not user:
             raise HTTPException(
-                status=status.HTTP_404_NOT_FOUND,
-                detail="User with email does not exist."
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="User not found"
             )
 
         db.delete(user)
         db.commit()
-        
+    
         return SuccessMessage(message=f"User with email {email} successfully deleted")
 
-    def update_current_course(self, db: Session, user_id: int, course: AvailableCourse) -> UserResponse:
+    def update_current_course(self, db: Session, email: str, course: AvailableCourse) -> UserResponse:
         """Updates the current course for a user"""
-        user = db.query(User).filter(User.id == user_id).first()
+        user = db.query(User).filter(User.email == email).first()
         
         if not user:
             raise HTTPException(
@@ -80,9 +106,18 @@ class UserService:
         
         return user.to_model()
 
-    def update_current_dialect(self, db: Session, user_id: int, dialect: AvailableDialect) -> UserResponse:
+    def clear_current_course(self, db: Session, email: str):
+        """Clears the current user course"""
+        user = db.query(User).filter(User.email == email).first()
+        user.current_course = None
+        db.commit()
+        db.refresh(user)
+
+        return user.to_model()
+
+    def update_current_dialect(self, db: Session, email: str, dialect: AvailableDialect) -> UserResponse:
         """Updates the current dialect for a user"""
-        user = db.query(User).filter(User.id == user_id).first()
+        user = db.query(User).filter(User.email == email).first()
         
         if not user:
             raise HTTPException(
@@ -96,9 +131,9 @@ class UserService:
         
         return user.to_model()
 
-    def add_language_learning(self, db: Session, user_id: int, language: str) -> UserResponse:
+    def add_language_learning(self, db: Session, email: str, language: AvailableLanguage) -> UserResponse:
         """Adds a language to the user's language-learning list"""
-        user = db.query(User).filter(User.id == user_id).first()
+        user = db.query(User).filter(User.email == email).first()
         
         if not user:
             raise HTTPException(
@@ -118,9 +153,9 @@ class UserService:
         
         return user.to_model()
 
-    def remove_language_learning(self, db: Session, user_id: int, language: str) -> UserResponse:
+    def remove_language_learning(self, db: Session, email: str, language: AvailableLanguage) -> UserResponse:
         """Removes a language from the user's language-learning list"""
-        user = db.query(User).filter(User.id == user_id).first()
+        user = db.query(User).filter(User.email == email).first()
         
         if not user:
             raise HTTPException(
@@ -140,9 +175,9 @@ class UserService:
         
         return user.to_model()
 
-    def add_language_learned(self, db: Session, user_id: int, language: str) -> UserResponse:
+    def add_language_learned(self, db: Session, email: str, language: str) -> UserResponse:
         """Adds a language to the user's language-learned list"""
-        user = db.query(User).filter(User.id == user_id).first()
+        user = db.query(User).filter(User.email == email).first()
         
         if not user:
             raise HTTPException(
@@ -161,10 +196,54 @@ class UserService:
         db.refresh(user)
         
         return user.to_model()
+    
+    def add_course_completed(self, db: Session, email: str, course: AvailableCourse) -> UserResponse:
+        """Adds a course to the user's courses-completed list"""
+        user = db.query(User).filter(User.email == email).first()
+        
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="User not found"
+            )
+        
+        if course in user.courses_completed:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Course already in completed list"
+            )
+        
+        user.courses_completed.append(course)
+        db.commit()
+        db.refresh(user)
+        
+        return user.to_model()
 
-    def remove_language_learned(self, db: Session, user_id: int, language: str) -> UserResponse:
+    def remove_course_completed(self, db: Session, email: str, course: AvailableCourse) -> UserResponse:
+        """Removes a course from the user's courses-completed list"""
+        user = db.query(User).filter(User.email == email).first()
+        
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="User not found"
+            )
+        
+        if not user.courses_completed or course not in user.courses_completed:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Course not in completed list"
+            )
+        
+        user.courses_completed.remove(course)
+        db.commit()
+        db.refresh(user)
+        
+        return user.to_model()
+    
+    def remove_language_learned(self, db: Session, email: str, language: str) -> UserResponse:
         """Removes a language from the user's language-learned list"""
-        user = db.query(User).filter(User.id == user_id).first()
+        user = db.query(User).filter(User.email == email).first()
         
         if not user:
             raise HTTPException(
@@ -179,35 +258,6 @@ class UserService:
             )
         
         user.languages_learned.remove(language)
-        db.commit()
-        db.refresh(user)
-        
-        return user.to_model()
-
-    def update_user_profile(
-        self, 
-        db: Session, 
-        user_id: int, 
-        first_name: str | None = None,
-        last_name: str | None = None,
-        gender: Gender | None = None
-    ) -> UserResponse:
-        """Updates user profile fields"""
-        user = db.query(User).filter(User.id == user_id).first()
-        
-        if not user:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="User not found"
-            )
-        
-        if first_name is not None:
-            user.first_name = first_name
-        if last_name is not None:
-            user.last_name = last_name
-        if gender is not None:
-            user.gender = gender
-        
         db.commit()
         db.refresh(user)
         

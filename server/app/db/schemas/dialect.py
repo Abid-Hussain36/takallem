@@ -1,11 +1,15 @@
+from typing import TYPE_CHECKING
 from sqlalchemy import Enum, ForeignKey, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.db.database import Base
 from app.db.enums import AvailableDialect
 from app.models.db.general_resource.dialect_response import DialectResponse
 
+if TYPE_CHECKING:
+    from app.db.schemas.language import LanguageSchema
 
-class Dialect(Base):
+
+class DialectSchema(Base):
     __tablename__ = "dialects"
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True, index=True) # PK
@@ -17,7 +21,7 @@ class Dialect(Base):
     text_color: Mapped[str] = mapped_column(String)
 
     # Relationships
-    language: Mapped["Language"] = relationship(back_populates="dialects")
+    language: Mapped["LanguageSchema"] = relationship("LanguageSchema", back_populates="dialects")
 
     def to_model(self) -> DialectResponse:
         return DialectResponse(

@@ -87,6 +87,69 @@
     padding: 2rem;
 }
 
+.courseContent {
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.loadingContainer,
+.errorContainer,
+.emptyContainer {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 400px;
+    text-align: center;
+    padding: 2rem;
+}
+
+.loadingContainer {
+    gap: 1.5rem;
+}
+
+.loadingContainer p {
+    font-size: 1.1rem;
+    color: #4a5568;
+}
+
+.errorContainer {
+    background: linear-gradient(135deg, rgba(245, 87, 108, 0.1) 0%, rgba(240, 147, 251, 0.1) 100%);
+    border-radius: 16px;
+    padding: 3rem;
+    gap: 1rem;
+}
+
+.errorContainer h2 {
+    color: #e53e3e;
+    font-size: 1.5rem;
+    margin: 0;
+}
+
+.errorContainer p {
+    color: #c53030;
+    font-size: 1rem;
+}
+
+.emptyContainer {
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(118, 75, 162, 0.05) 100%);
+    border-radius: 16px;
+    padding: 3rem;
+    gap: 1rem;
+}
+
+.emptyContainer h2 {
+    color: #2d3748;
+    font-size: 1.5rem;
+    margin: 0;
+}
+
+.emptyContainer p {
+    color: #4a5568;
+    font-size: 1rem;
+}
+
 .hero {
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     border-radius: 24px;
@@ -320,6 +383,10 @@
         padding: 1rem;
     }
 
+    .courseContent {
+        padding: 0;
+    }
+
     .hero {
         padding: 2rem 1.5rem;
     }
@@ -342,5 +409,22 @@
 
     .statValue {
         font-size: 1.5rem;
+    }
+
+    .loadingContainer,
+    .errorContainer,
+    .emptyContainer {
+        padding: 1.5rem;
+        min-height: 300px;
+    }
+
+    .errorContainer h2,
+    .emptyContainer h2 {
+        font-size: 1.25rem;
+    }
+
+    .errorContainer p,
+    .emptyContainer p {
+        font-size: 0.9rem;
     }
 }

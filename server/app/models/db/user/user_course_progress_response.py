@@ -1,12 +1,13 @@
 from pydantic import BaseModel
 from typing import Dict
-from app.db.enums import AvailableCourse
+from app.db.enums import AvailableCourse, AvailableDialect
 
 
 class UserCourseProgressResponse(BaseModel):
     id: int
     course_name: AvailableCourse
-    dialect: str | None = None
+    dialect: AvailableDialect | None = None
+    default_dialect: AvailableDialect | None = None
     total_modules: int
     curr_module: int
     covered_words: Dict[str, int]

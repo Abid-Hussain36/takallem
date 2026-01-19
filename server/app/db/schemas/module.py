@@ -23,9 +23,6 @@ class Module(Base):
 
     resource_id: Mapped[int] = mapped_column(ForeignKey("resources.id", ondelete="CASCADE"))
 
-    # Relationship
-    resource: Mapped["Resource"] = relationship(back_populates="module")
-
     __table_args__ = (
         UniqueConstraint("course", "unit", "section", "number", "dialect", name="uq_course_unit_section_number"),
         Index("idx_course_unit_section_number", "course", "unit", "section", "number")
@@ -40,5 +37,5 @@ class Module(Base):
             section=self.section,
             title=self.title,
             number=self.number,
-            resource=self.resource.to_model()  # Include the actual polymorphic resource
+            resource_id=self.resource_id
         )

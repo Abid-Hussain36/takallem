@@ -1,6 +1,5 @@
 from pydantic import BaseModel
 from app.db.enums import AvailableCourse, AvailableDialect
-from app.models.db.general_resource.resource_response import PolymorphicResource
 
 
 class ModuleResponse(BaseModel):
@@ -11,5 +10,5 @@ class ModuleResponse(BaseModel):
     section: str
     title: str
     number: int
-    resource: PolymorphicResource  # Polymorphic resource - can be any Resource subtype
+    resource_id: int
 

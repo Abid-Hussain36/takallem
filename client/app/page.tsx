@@ -3,30 +3,135 @@
 import { useUser } from "@/context/UserContext";
 import { useRouter } from "next/navigation";
 import styles from './home.module.css';
+import { useEffect, useState } from "react";
+import { useModules } from "@/context/ModulesContext";
+import { useUserCourseProgress } from "@/context/UserCourseProgressContext";
+import CourseProgress from "@/components/CourseProgress";
+import ModuleList from "@/components/ModuleList";
+import { ModuleResponse } from "@/types/response_models/ModuleResponse";
 
 export default function Home() {
   const { user, setUser } = useUser();
+  const { userCourseProgress, setUserCourseProgress } = useUserCourseProgress();
+  const {modules, setModules} = useModules();
+
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string>("");
+  const [token, setToken] = useState<string | null>(null);
   const router = useRouter();
 
   const handleSignout = () => {
     localStorage.removeItem("token");
     setUser(null);
+    setUserCourseProgress(null);
+    setModules(null);
     router.replace("/login");
   }
 
-  if (!user) {
-    return (
-      <div className={styles.loading}>
-        <div className={styles.spinner}></div>
-      </div>
-    );
+  const handleModuleClick = (module: ModuleResponse) => {
+    console.log("Module clicked:", module.number);
+    // TODO: Navigate to module page or open module content
+  }
+
+  useEffect(() => {
+    const getModules = async () => {
+      setIsLoading(true);
+
+      if(!user){
+        localStorage.removeItem("token");
+        setUser(null);
+        setUserCourseProgress(null);
+        setModules(null);
+        router.replace("/login");
+      }
+
+      const course = user!.current_course;
+      const dialect = user!.current_dialect;
+
+      // Get token from localStorage
+      const authToken = localStorage.getItem("token");
+      
+      if (!authToken) {
+        router.replace("/login");
+        return;
+      }
+    
+      if(dialect){
+        try{
+          const modulesResponse = await fetch(
+            `${process.env.NEXT_PUBLIC_SERVER_URL}/modules/${course}/${dialect}`,
+            {
+              method: "GET",
+              headers: {
+                'Authorization': `Bearer ${authToken}`,
+                'Content-Type': 'application/json'
+              }
+            }
+          );
+          console.log(modulesResponse);
+
+          if(!modulesResponse.ok){
+            const errorData = await modulesResponse.json();
+            throw new Error(errorData.detail || "Failed to fetch modules")
+          }
+
+          const modulesData = await modulesResponse.json();
+          setModules(modulesData);
+        } catch(err){
+          setError(err instanceof Error ? err.message : "Error in accessing modules with dialect.");
+        } finally{
+          setIsLoading(false);
+        }
+      } else{
+        try{
+          const modulesResponse = await fetch(
+            `${process.env.NEXT_PUBLIC_SERVER_URL}/modules/${course}`,
+            {
+              method: "GET",
+              headers: {
+                'Authorization': `Bearer ${authToken}`,
+                'Content-Type': 'application/json'
+              }
+            }
+          );
+
+          if(!modulesResponse.ok){
+            const errorData = await modulesResponse.json();
+            throw new Error(errorData.detail || "Failed to fetch modules")
+          }
+
+          const modulesData = await modulesResponse.json();
+          setModules(modulesData);
+        } catch(err){
+          setError(err instanceof Error ? err.message : "Error in accessing modules without dialect.");
+        } finally{
+          setIsLoading(false);
+        }
+      }
+    }
+    
+    if(!modules || modules.length === 0){
+      getModules();
+    }
+  }, [])
+
+  const handleBadState = () => {
+    localStorage.removeItem("token");
+    setUser(null);
+    setUserCourseProgress(null);
+    setModules(null);
+    router.replace("/login");
+  }
+
+  if (!user || !userCourseProgress || !user.current_course) {
+    return <button onClick={handleBadState}>Bad State</button>
   }
 
   return (
     <div className={styles.container}>
       <nav className={styles.navbar}>
         <div className={styles.navContent}>
-          <h1 className={styles.logo}>تكلّم</h1>
+          <h1 className={styles.logo}>Takallem</h1>
           <button onClick={handleSignout} className={styles.signoutButton}>
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
               <path fillRule="evenodd" d="M3 4.25A2.25 2.25 0 015.25 2h5.5A2.25 2.25 0 0113 4.25v2a.75.75 0 01-1.5 0v-2a.75.75 0 00-.75-.75h-5.5a.75.75 0 00-.75.75v11.5c0 .414.336.75.75.75h5.5a.75.75 0 00.75-.75v-2a.75.75 0 011.5 0v2A2.25 2.25 0 0110.75 18h-5.5A2.25 2.25 0 013 15.75V4.25z" clipRule="evenodd" />
@@ -38,16 +143,40 @@ export default function Home() {
       </nav>
 
       <main className={styles.main}>
-        <div className={styles.hero}>
-          <div className={styles.heroContent}>
-            <h2 className={styles.greeting}>
-              مرحبا, {user.first_name}! 👋
-            </h2>
-            <p className={styles.heroSubtitle}>Welcome back to your Arabic learning journey</p>
+        {isLoading ? (
+          <div className={styles.loadingContainer}>
+            <div className={styles.spinner}></div>
+            <p>Loading your course modules...</p>
           </div>
-        </div>
+        ) : error ? (
+          <div className={styles.errorContainer}>
+            <h2>Error loading modules</h2>
+            <p>{error}</p>
+          </div>
+        ) : modules && modules.length > 0 ? (
+          <div className={styles.courseContent}>
+            <CourseProgress 
+              courseName={user!.current_course || "Your Course"}
+              currentModule={userCourseProgress!.curr_module}
+              totalModules={userCourseProgress!.total_modules}
+            />
+            <ModuleList 
+              modules={modules}
+              currentModule={userCourseProgress!.curr_module}
+              onModuleClick={handleModuleClick}
+            />
+          </div>
+        ) : (
+          <div className={styles.emptyContainer}>
+            <h2>No modules available</h2>
+            <p>Please select a course to get started.</p>
+            <p>{modules?.toString()}</p>
+            <p>{userCourseProgress?.course_name || "Hello"}</p>
+            <button onClick={() => console.log(userCourseProgress)}>Click</button>
+          </div>
+        )}
 
-        <div className={styles.cardsGrid}>
+        <div className={styles.cardsGrid} style={{ display: 'none' }}>
           <div className={styles.card}>
             <div className={styles.cardHeader}>
               <div className={styles.iconWrapper} style={{background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'}}>
@@ -60,21 +189,21 @@ export default function Home() {
             <div className={styles.cardContent}>
               <div className={styles.infoRow}>
                 <span className={styles.infoLabel}>Email:</span>
-                <span className={styles.infoValue}>{user.email}</span>
+                <span className={styles.infoValue}>{user!.email}</span>
               </div>
               <div className={styles.infoRow}>
                 <span className={styles.infoLabel}>Username:</span>
-                <span className={styles.infoValue}>@{user.username}</span>
+                <span className={styles.infoValue}>@{user!.username}</span>
               </div>
               <div className={styles.infoRow}>
                 <span className={styles.infoLabel}>Name:</span>
                 <span className={styles.infoValue}>
-                  {user.first_name} {user.last_name || ''}
+                  {user!.first_name} {user!.last_name || ''}
                 </span>
               </div>
               <div className={styles.infoRow}>
                 <span className={styles.infoLabel}>Gender:</span>
-                <span className={styles.infoValue}>{user.gender}</span>
+                <span className={styles.infoValue}>{user!.gender}</span>
               </div>
             </div>
           </div>
@@ -89,9 +218,9 @@ export default function Home() {
               <h3 className={styles.cardTitle}>Current Course</h3>
             </div>
             <div className={styles.cardContent}>
-              {user.current_course ? (
+              {user!.current_course ? (
                 <div className={styles.courseInfo}>
-                  <div className={styles.courseBadge}>{user.current_course}</div>
+                  <div className={styles.courseBadge}>{user!.current_course}</div>
                   <p className={styles.courseDescription}>
                     Continue learning and improve your Arabic skills
                   </p>
@@ -115,9 +244,9 @@ export default function Home() {
               <h3 className={styles.cardTitle}>Languages Learning</h3>
             </div>
             <div className={styles.cardContent}>
-              {user.languages_learning && user.languages_learning.length > 0 ? (
+              {user!.languages_learning && user!.languages_learning.length > 0 ? (
                 <div className={styles.languagesList}>
-                  {user.languages_learning.map((lang, index) => (
+                  {user!.languages_learning.map((lang, index) => (
                     <span key={index} className={styles.languageTag}>{lang}</span>
                   ))}
                 </div>
@@ -137,9 +266,9 @@ export default function Home() {
               <h3 className={styles.cardTitle}>Languages Mastered</h3>
             </div>
             <div className={styles.cardContent}>
-              {user.languages_learned && user.languages_learned.length > 0 ? (
+              {user!.languages_learned && user!.languages_learned.length > 0 ? (
                 <div className={styles.languagesList}>
-                  {user.languages_learned.map((lang, index) => (
+                  {user!.languages_learned.map((lang, index) => (
                     <span key={index} className={styles.languageTagMastered}>{lang} ✓</span>
                   ))}
                 </div>

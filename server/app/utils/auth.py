@@ -12,10 +12,18 @@ def get_current_user_email(credentials: HTTPAuthorizationCredentials = Depends(s
     """Returns the email from the authenticated token"""
     token = credentials.credentials
 
-    supabase_client = get_supabase_client()
-    user = supabase_client.auth.get_user(token) # This actually validates if the token is valid
+    try:
+        supabase_client = get_supabase_client()
+        user = supabase_client.auth.get_user(token) # This actually validates if the token is valid
 
-    if not user.user or not user.user.email:
-        raise HTTPException(status_code=401, detail="Invalid token")
-    
-    return user.user.email
+        if not user.user or not user.user.email:
+            raise HTTPException(status_code=401, detail="Invalid token")
+        
+        return user.user.email
+    except Exception as e:
+        # Log the actual error for debugging
+        print(f"Auth error: {str(e)}")
+        raise HTTPException(
+            status_code=401, 
+            detail=f"Authentication failed: {str(e)}"
+        )

@@ -11,4 +11,5 @@ export interface SignupRequest {
     current_dialect: AvailableDialect | null
     languages_learning: string[]
     languages_learned: string[]
+    courses_completed: string[]
 }

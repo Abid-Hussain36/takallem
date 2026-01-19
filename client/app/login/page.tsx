@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import Link from "next/link";
 import styles from './login.module.css';
+import { useUserCourseProgress } from "@/context/UserCourseProgressContext";
 
 export default function Login() {
     const [email, setEmail] = useState<string>("");
@@ -14,6 +15,7 @@ export default function Login() {
     const [isLoading, setIsLoading] = useState<boolean>(false);
 
     const {setUser} = useUser();
+    const {userCourseProgress, setUserCourseProgress} = useUserCourseProgress();
     const router = useRouter();
 
     const validateEmail = (email: string): string | null => {
@@ -31,7 +33,6 @@ export default function Login() {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        setError("");
 
         const emailValidation: string | null = validateEmail(email);
 
@@ -67,17 +68,57 @@ export default function Login() {
 
             const data = await response.json();
 
-            setUser(data.user);
-
-            if(data.token){
-                localStorage.setItem("token", data.token);
+            if(!data.user || !data.token){
+                throw new Error("Failed to get user or token data after login endpoint.");
             }
 
-            router.replace("/");
+            const tokenData = data.token;
+            const userData = data.user;
+
+            localStorage.setItem("token", tokenData);
+            setUser(userData);
+
+            if(userData.current_course){
+                const getUserCourseProgressResponse = await fetch(
+                  `${process.env.NEXT_PUBLIC_SERVER_URL}/user-course-progress/?user_id=${userData.id}&course=${userData.current_course}`,
+                  {
+                    headers: { 'Authorization': `Bearer ${tokenData}` }
+                  }
+                )
+                
+                // If we dont have a progress, we clear the user's course and go to language selection.
+                if(getUserCourseProgressResponse.status === 404){
+                  const clearUserCourseResponse = await fetch(
+                    `${process.env.NEXT_PUBLIC_SERVER_URL}/user/current-course/clear`,
+                    {
+                      method: "PUT",
+                      headers: { 'Authorization': `Bearer ${tokenData}` }
+                    }
+                  );
+                  
+                  // IDK what do here for now
+                  if(!clearUserCourseResponse.ok){
+                    const errorData = await clearUserCourseResponse.json();
+                    throw new Error(errorData.detail || "Error in clearing user course when progress not found.")
+                  }
+    
+                  const clearUserCourseData = await clearUserCourseResponse.json();
+                  setUser(clearUserCourseData);
+                  
+                  router.replace("/language-selection");
+                }
+    
+                const userCourseProgressData = await getUserCourseProgressResponse.json();
+                setUserCourseProgress(userCourseProgressData);
+    
+                router.replace("/");
+            } else {
+                router.replace("/language-selection");
+            }
         } catch(err){
             console.error(`Error on login: ${err}`);
             setError(err instanceof Error ? err.message : "An error occurred during login");
-        } finally {
+        } finally{
             setIsLoading(false);
         }
     }

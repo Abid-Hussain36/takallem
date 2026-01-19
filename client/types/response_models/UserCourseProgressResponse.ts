@@ -1,9 +1,10 @@
-import { AvailableCourse } from "../enums";
+import { AvailableCourse, AvailableDialect } from "../enums";
 
 export interface UserCourseProgressResponse {
     id: number;
     course_name: AvailableCourse;
-    dialect: string | null;
+    dialect: AvailableDialect | null;
+    default_dialect: AvailableDialect | null;
     total_modules: number;
     curr_module: number;
     covered_words: Record<string, number>;

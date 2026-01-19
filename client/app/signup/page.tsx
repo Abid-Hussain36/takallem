@@ -36,7 +36,6 @@ export default function Signup() {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        setError("");
 
         const emailValidation: string | null = validateEmail(email);
 
@@ -72,10 +71,9 @@ export default function Signup() {
                 current_course: null,
                 current_dialect: null,
                 languages_learning: [],
-                languages_learned: []
+                languages_learned: [],
+                courses_completed: []
             };
-
-            console.log(process.env.NEXT_PUBLIC_SERVER_URL ? `${process.env.NEXT_PUBLIC_SERVER_URL}/auth/signup` : "URL failed to fetch from env");
 
             const signupResponse = await fetch(
                 `${process.env.NEXT_PUBLIC_SERVER_URL}/auth/signup`,
@@ -86,8 +84,6 @@ export default function Signup() {
                 }
             );
 
-            console.log("API Request went through");
-
             if (!signupResponse.ok) {
                 const errorData = await signupResponse.json();
                 throw new Error(errorData.detail || "Signup failed");
@@ -95,13 +91,14 @@ export default function Signup() {
 
             const data = await signupResponse.json();
 
-            setUser(data.user);
-            
-            if(data.token){
-                localStorage.setItem("token", data.token);
+            if(!data.user || !data.token){
+                throw new Error("Failed to get user or token data after signup endpoint.");
             }
 
-            router.replace("/");
+            setUser(data.user);
+            localStorage.setItem("token", data.token);
+
+            router.replace("/language-selection");
         } catch(err){
             console.error(`Error on signup: ${err}`);
             setError(err instanceof Error ? err.message : "An error occurred during signup");

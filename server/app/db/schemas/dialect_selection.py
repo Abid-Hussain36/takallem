@@ -1,10 +1,13 @@
-from typing import List
+from typing import List, TYPE_CHECKING
 from sqlalchemy import ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.db.schemas.resource import Resource
 from app.db.enums import ResourceType
 from app.db.schemas.dialect_selection_dialects import dialect_selection_dialects
 from app.models.db.general_resource.dialect_selection_response import DialectSelectionResponse
+
+if TYPE_CHECKING:
+    from app.db.schemas.dialect import DialectSchema
 
 
 class DialectSelection(Resource):
@@ -13,7 +16,7 @@ class DialectSelection(Resource):
     id: Mapped[int] = mapped_column(ForeignKey("resources.id", ondelete="CASCADE"), primary_key=True)
 
     # Relationships
-    dialects: Mapped[List["Dialect"]] = relationship(secondary=dialect_selection_dialects)
+    dialects: Mapped[List["DialectSchema"]] = relationship("DialectSchema", secondary=dialect_selection_dialects)
 
     __mapper_args__ = {
         "polymorphic_identity": ResourceType.DIALECT_SELECTION

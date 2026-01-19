@@ -1,12 +1,16 @@
-from typing import List
+from typing import List, TYPE_CHECKING
 from sqlalchemy import Enum, ForeignKey, String, ARRAY
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.db.database import Base
 from app.db.enums import AvailableLanguage
 from app.models.db.general_resource.language_response import LanguageResponse
 
+if TYPE_CHECKING:
+    from app.db.schemas.dialect import DialectSchema
+    from app.db.schemas.course import CourseSchema
 
-class Language(Base):
+
+class LanguageSchema(Base):
     __tablename__ = "languages"
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True, index=True) # PK
@@ -16,11 +20,13 @@ class Language(Base):
     text_color: Mapped[str] = mapped_column(String)
 
     # Relatonships
-    dialects: Mapped[List["Dialect"]] = relationship(
+    dialects: Mapped[List["DialectSchema"]] = relationship(
+        "DialectSchema",
         back_populates="language",
         cascade="all, delete-orphan"
     )
-    courses: Mapped[List["Course"]] = relationship(
+    courses: Mapped[List["CourseSchema"]] = relationship(
+        "CourseSchema",
         back_populates="language",
         cascade="all, delete-orphan"
     )

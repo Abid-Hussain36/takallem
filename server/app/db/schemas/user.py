@@ -20,6 +20,7 @@ class User(Base):
     current_dialect: Mapped[AvailableDialect | None] = mapped_column(Enum(AvailableDialect))
     languages_learning: Mapped[List[str]] = mapped_column(ARRAY(String), default=[]) # The list of languages the user is currently learning
     languages_learned: Mapped[List[str]] = mapped_column(ARRAY(String), default=[]) # The list of languages the user has successfully learned on the app
+    courses_completed: Mapped[List[str]] = mapped_column(ARRAY(String), default=[]) # The list of courses the user has completed
     
     # Relationships
     # Relationships basically help you access the objects we have in our relations
@@ -42,5 +43,6 @@ class User(Base):
             current_dialect=self.current_dialect,
             languages_learning=self.languages_learning,
             languages_learned=self.languages_learned,
+            courses_completed=self.courses_completed,
             course_progresses=[course_progress.to_model() for course_progress in self.course_progresses]
         )

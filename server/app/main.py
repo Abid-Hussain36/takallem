@@ -7,6 +7,16 @@ from dotenv import load_dotenv
 # This must run first because all the routers will use env variables!
 load_dotenv()
 
+# Import all schemas to ensure they're registered with SQLAlchemy before any DB operations
+# Import order matters: base classes first, then dependencies
+from app.db.schemas.resource import Resource
+from app.db.schemas.language import LanguageSchema
+from app.db.schemas.dialect import DialectSchema
+from app.db.schemas.course import CourseSchema
+from app.db.schemas.module import Module
+from app.db.schemas.user import User
+from app.db.schemas.user_course_progress import UserCourseProgress
+
 from app.routers.letter import letter_router
 from app.routers.vocab import vocab_router
 from app.routers.auth import auth_router
@@ -25,6 +35,8 @@ app.add_middleware(
     allow_origins=[
         "http://localhost:3000",      # Next.js dev server
         "http://127.0.0.1:3000",      # Alternative localhost
+        "http://localhost:8000",      # Backend (if needed)
+        "http://127.0.0.1:8000",      # Backend alternative
     ],
     allow_credentials=True,
     allow_methods=["*"],              # Allow all HTTP methods
