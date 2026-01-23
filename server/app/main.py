@@ -24,6 +24,7 @@ from app.routers.user import user_router
 from app.routers.user_course_progress import user_course_progress_router
 from app.routers.module import module_router
 from app.routers.language import language_router
+from app.routers.resource import resource_router
 from app.db.database import get_db
 
 
@@ -51,6 +52,7 @@ app.include_router(user_router, prefix="/user")
 app.include_router(user_course_progress_router, prefix="/user-course-progress")
 app.include_router(module_router, prefix="/modules")
 app.include_router(language_router, prefix="/languages")
+app.include_router(resource_router, prefix="/resource")
 
 
 @app.get("/health")

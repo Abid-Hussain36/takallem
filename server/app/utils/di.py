@@ -5,6 +5,7 @@ from app.services.module_service import ModuleService
 from app.services.language_service import LanguageService
 from app.services.letter.pronounciation_service import PronounciationService
 from app.services.letter.writing_service import LetterWritingService
+from app.services.resource_service import ResourceService
 
 
 # Defines functions we use to build the objects for injection.
@@ -34,3 +35,7 @@ def get_pronounciation_service() -> PronounciationService:
 
 def get_writing_service() -> LetterWritingService:
     return LetterWritingService()
+
+
+def get_resource_service() -> ResourceService:
+    return ResourceService()

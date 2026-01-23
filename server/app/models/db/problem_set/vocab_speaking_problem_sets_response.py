@@ -7,5 +7,6 @@ from app.models.db.problem_set.vocab_speaking_problem_set_response import VocabS
 class VocabSpeakingProblemSetsResponse(BaseModel):
     id: int
     resource_type: ResourceType
+    set_limit: int
     problem_sets: List[VocabSpeakingProblemSetResponse]
 

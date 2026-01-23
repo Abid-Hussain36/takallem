@@ -11,6 +11,7 @@ from app.models.db.user.user_course_progress_requests.create_user_course_progres
 from app.models.db.user.user_course_progress_requests.update_user_course_progress_dialect_request import UpdateUserCourseProgressDialectRequest
 from app.models.db.user.user_course_progress_requests.add_covered_word_request import AddCoveredWordReqest
 from app.models.db.user.user_course_progress_requests.increment_current_vocab_problem_set_request import IncrementCurrentVocabProblemSetRequest
+from app.models.db.user.user_course_progress_requests.add_covered_word_response import AddCoveredWordResponse
 
 
 user_course_progress_router = APIRouter()
@@ -76,13 +77,13 @@ def increment_curr_module(
     return service.increment_curr_module(db, id)
 
 
-@user_course_progress_router.put("/covered_words", response_model=UserCourseProgressResponse)
+@user_course_progress_router.put("/covered_words", response_model=AddCoveredWordResponse)
 def add_covered_word(
     addCoveredWordRequest: AddCoveredWordReqest,
     email: str = Depends(get_current_user_email),
     db: Session = Depends(get_db),
     service: UserCourseProgressService = Depends(get_user_course_progress_service)
-) -> UserCourseProgressResponse:
+) -> AddCoveredWordResponse:
     """Updates covered_words based on word count logic"""
     return service.add_covered_word(db, addCoveredWordRequest)
 

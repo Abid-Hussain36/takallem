@@ -6,6 +6,7 @@ import { UserCourseProgressProvider, useUserCourseProgress } from "@/context/Use
 import { ModulesProvider } from "@/context/ModulesContext";
 import { useRouter, usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
+import { ResourceProvider } from "@/context/ResourceContext";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -181,7 +182,9 @@ export default function RootLayout({
         <UserProvider>
           <UserCourseProgressProvider>
             <ModulesProvider>
-              <LayoutContent>{children}</LayoutContent>
+              <ResourceProvider>
+                <LayoutContent>{children}</LayoutContent>
+              </ResourceProvider>
             </ModulesProvider>
           </UserCourseProgressProvider>
         </UserProvider>

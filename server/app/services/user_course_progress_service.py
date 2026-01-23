@@ -9,6 +9,7 @@ from app.models.db.user.user_course_progress_requests.create_user_course_progres
 from app.models.db.user.user_course_progress_requests.update_user_course_progress_dialect_request import UpdateUserCourseProgressDialectRequest
 from app.models.db.user.user_course_progress_requests.add_covered_word_request import AddCoveredWordReqest
 from app.models.db.user.user_course_progress_requests.increment_current_vocab_problem_set_request import IncrementCurrentVocabProblemSetRequest
+from app.models.db.user.user_course_progress_requests.add_covered_word_response import AddCoveredWordResponse
 
 
 class UserCourseProgressService:
@@ -111,10 +112,12 @@ class UserCourseProgressService:
         
         return progress.to_model()
 
-    def add_covered_word(self, db: Session, addCoveredWordRequest: AddCoveredWordReqest) -> UserCourseProgressResponse:
+    def add_covered_word(self, db: Session, addCoveredWordRequest: AddCoveredWordReqest) -> AddCoveredWordResponse:
         """Updates covered_words based on the logic specified"""
         id = addCoveredWordRequest.id
         word = addCoveredWordRequest.word
+
+        wordAdded = False
 
         progress = db.query(UserCourseProgress).filter(UserCourseProgress.id == id).first()
         
@@ -127,16 +130,18 @@ class UserCourseProgressService:
         # If word not in covered_words
         if word not in progress.covered_words:
             progress.covered_words[word] = 1
+            wordAdded = True
         # If word value is 1
         elif progress.covered_words[word] == 1:
             progress.covered_words[word] = 2
             progress.problem_counter += 1
+            wordAdded = True
         # If word value is 2, do nothing (already handled by not having else)
         
         db.commit()
         db.refresh(progress)
         
-        return progress.to_model()
+        return AddCoveredWordResponse(wordAdded)
 
     def clear_covered_words(self, db: Session, id: int) -> UserCourseProgressResponse:
         """Clears the covered_words dictionary"""

@@ -1,5 +1,4 @@
 import { AvailableCourse, AvailableDialect } from "../enums";
-import { PolymorphicResource } from "./ResourceResponse";
 
 export interface ModuleResponse {
     id: number;

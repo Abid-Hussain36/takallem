@@ -178,6 +178,7 @@ export interface VocabListeningProblemSetsResponse extends BaseResource {
 
 export interface VocabSpeakingProblemSetsResponse extends BaseResource {
     resource_type: ResourceType.VOCAB_SPEAKING_PROBLEM_SETS;
+    set_limit: number;
     problem_sets: VocabSpeakingProblemSetResponse[];
 }
 
@@ -202,3 +203,12 @@ export type PolymorphicResource =
     | VocabSpeakingProblemSetsResponse
     | DialectSelectionResponse
     | BaseResource;  // Fallback for unknown types
+
+export interface CachedResource{
+    course: AvailableCourse;
+    unit: string;
+    section: string;
+    title: string;
+    number: number;
+    resource: PolymorphicResource | null;
+}

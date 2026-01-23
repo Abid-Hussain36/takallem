@@ -9,11 +9,13 @@ import { useUserCourseProgress } from "@/context/UserCourseProgressContext";
 import CourseProgress from "@/components/CourseProgress";
 import ModuleList from "@/components/ModuleList";
 import { ModuleResponse } from "@/types/response_models/ModuleResponse";
+import { useResource } from "@/context/ResourceContext";
 
 export default function Home() {
   const { user, setUser } = useUser();
   const { userCourseProgress, setUserCourseProgress } = useUserCourseProgress();
   const {modules, setModules} = useModules();
+  const {setResource} = useResource();
 
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string>("");
@@ -29,8 +31,15 @@ export default function Home() {
   }
 
   const handleModuleClick = (module: ModuleResponse) => {
-    console.log("Module clicked:", module.number);
-    // TODO: Navigate to module page or open module content
+    setResource({
+      course: module.course,
+      unit: module.unit,
+      section: module.section,
+      title: module.title,
+      number: module.number,
+      resource: null
+    })
+    router.push(`/resource/${module.resource_id}`);
   }
 
   useEffect(() => {
@@ -77,6 +86,7 @@ export default function Home() {
 
           const modulesData = await modulesResponse.json();
           setModules(modulesData);
+          console.log(modulesData);
         } catch(err){
           setError(err instanceof Error ? err.message : "Error in accessing modules with dialect.");
         } finally{
@@ -102,6 +112,7 @@ export default function Home() {
 
           const modulesData = await modulesResponse.json();
           setModules(modulesData);
+          console.log(modulesData);
         } catch(err){
           setError(err instanceof Error ? err.message : "Error in accessing modules without dialect.");
         } finally{
