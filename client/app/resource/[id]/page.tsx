@@ -17,6 +17,9 @@ import VocabReadingProblemSets from "@/app/vocab-reading-problem-sets/page";
 import VocabListeningProblemSets from "@/app/vocab-listening-problem-sets/page";
 import VocabSpeakingProblemSets from "@/app/vocab-speaking-problem-sets/page";
 import DialectSelection from "@/app/dialect-selection/page";
+import DictationProblemSet from "@/app/dictation-problem-set/page";
+import DiscriminationProblemSet from "@/app/discrimination-problem-set/page";
+import LetterJoiningProblemSet from "@/app/letter-joining-problem-set/page";
 
 
 const Resource = () => {
@@ -96,6 +99,9 @@ const Resource = () => {
             case ResourceType.LETTER_WRITING_PROBLEM_SET:
                 return <LetterWritingProblemSet />;
             
+            case ResourceType.LETTER_JOINING_PROBLEM_SET:
+                return <LetterJoiningProblemSet />;
+            
             case ResourceType.VOCAB_READING_PROBLEM_SETS:
                 return <VocabReadingProblemSets />;
             
@@ -107,6 +113,12 @@ const Resource = () => {
             
             case ResourceType.DIALECT_SELECTION:
                 return <DialectSelection />;
+
+            case ResourceType.DICTATION_PROBLEM_SET:
+                return <DictationProblemSet />;
+
+            case ResourceType.DISCRIMINATION_PROBLEM_SET:
+                return <DiscriminationProblemSet />;
             
             default:
                 return <div>Unknown resource type: {resource.resource.resource_type}</div>;

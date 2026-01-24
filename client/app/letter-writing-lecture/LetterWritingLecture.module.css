@@ -1,0 +1,409 @@
+.container {
+    min-height: 100vh;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    display: flex;
+    flex-direction: column;
+}
+
+.loading {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    font-size: 1.5rem;
+    color: white;
+}
+
+/* Top Bar */
+.topBar {
+    background: rgba(255, 255, 255, 0.98);
+    backdrop-filter: blur(10px);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    padding: 1.5rem 2rem;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+.breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.875rem;
+    color: #6b7280;
+    margin-bottom: 0.75rem;
+}
+
+.course {
+    font-weight: 600;
+    color: #667eea;
+}
+
+.unit, .section {
+    color: #4b5563;
+}
+
+.separator {
+    color: #d1d5db;
+}
+
+.lectureHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.title {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #1f2937;
+    margin: 0;
+}
+
+.moduleNumber {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 0.5rem 1rem;
+    border-radius: 2rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+}
+
+/* Content Wrapper */
+.contentWrapper {
+    flex: 1;
+    padding: 3rem 2rem;
+    display: flex;
+    justify-content: center;
+}
+
+.content {
+    max-width: 1200px;
+    width: 100%;
+    background: white;
+    border-radius: 1rem;
+    padding: 3rem;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+/* Markdown Sections */
+.markdownSection {
+    margin-bottom: 2.5rem;
+    line-height: 1.8;
+    color: #374151;
+}
+
+.markdownSection:last-of-type {
+    margin-bottom: 3rem;
+}
+
+.markdownSection h1,
+.markdownSection h2,
+.markdownSection h3 {
+    color: #1f2937;
+    font-weight: 700;
+    margin-top: 2rem;
+    margin-bottom: 1rem;
+}
+
+.markdownSection h1 {
+    font-size: 2rem;
+}
+
+.markdownSection h2 {
+    font-size: 1.5rem;
+}
+
+.markdownSection h3 {
+    font-size: 1.25rem;
+}
+
+.markdownSection p {
+    margin-bottom: 1rem;
+}
+
+.markdownSection ul,
+.markdownSection ol {
+    margin-left: 1.5rem;
+    margin-bottom: 1rem;
+}
+
+.markdownSection li {
+    margin-bottom: 0.5rem;
+}
+
+.markdownSection strong {
+    font-weight: 600;
+    color: #667eea;
+}
+
+.markdownSection code {
+    background: #f3f4f6;
+    padding: 0.2rem 0.4rem;
+    border-radius: 0.25rem;
+    font-size: 0.875em;
+    font-family: monospace;
+}
+
+/* Writing Sequences Section */
+.sequencesSection {
+    margin-top: 3rem;
+    padding-top: 2rem;
+    border-top: 2px solid #e5e7eb;
+}
+
+.sequencesSectionTitle {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: #1f2937;
+    margin-bottom: 2rem;
+    text-align: center;
+}
+
+/* Position Section */
+.positionSection {
+    margin-bottom: 3rem;
+    padding: 2rem;
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(118, 75, 162, 0.05) 100%);
+    border-radius: 1rem;
+    border: 2px solid rgba(102, 126, 234, 0.1);
+}
+
+.positionSection:last-child {
+    margin-bottom: 0;
+}
+
+.positionTitle {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #667eea;
+    margin-bottom: 1.5rem;
+    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+}
+
+.positionIcon {
+    width: 32px;
+    height: 32px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: 700;
+    font-size: 1rem;
+}
+
+/* Sequence Container */
+.sequenceContainer {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+    padding: 1rem;
+}
+
+/* Image Wrapper */
+.imageWrapper {
+    flex-shrink: 0;
+    animation: fadeInUp 0.5s ease;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.sequenceImage {
+    width: 150px;
+    height: 150px;
+    object-fit: contain;
+    border-radius: 0.75rem;
+    background: white;
+    padding: 1rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+    border: 2px solid #e5e7eb;
+}
+
+.sequenceImage:hover {
+    transform: translateY(-4px) scale(1.05);
+    box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
+    border-color: #667eea;
+}
+
+/* Arrow */
+.arrow {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #667eea;
+    font-size: 2rem;
+    font-weight: 700;
+    animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+    50% {
+        opacity: 0.6;
+        transform: scale(1.1);
+    }
+}
+
+.arrow svg {
+    width: 32px;
+    height: 32px;
+}
+
+/* Empty State */
+.emptyState {
+    text-align: center;
+    padding: 3rem;
+    color: #6b7280;
+    font-size: 1.125rem;
+}
+
+/* Footer */
+.footer {
+    background: rgba(255, 255, 255, 0.98);
+    backdrop-filter: blur(10px);
+    box-shadow: 0 -4px 6px rgba(0, 0, 0, 0.1);
+    padding: 2rem;
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.button {
+    padding: 0.875rem 2rem;
+    border-radius: 0.75rem;
+    font-weight: 600;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    border: none;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.homeButton {
+    background: rgba(102, 126, 234, 0.1);
+    color: #667eea;
+    border: 2px solid #667eea;
+}
+
+.homeButton:hover {
+    background: #667eea;
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgba(102, 126, 234, 0.3);
+}
+
+.continueButton {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.continueButton:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgba(102, 126, 234, 0.4);
+}
+
+.button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.button svg {
+    width: 20px;
+    height: 20px;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .topBar,
+    .contentWrapper,
+    .footer {
+        padding: 1.5rem 1rem;
+    }
+
+    .content {
+        padding: 2rem 1.5rem;
+    }
+
+    .title {
+        font-size: 1.5rem;
+    }
+
+    .sequencesSectionTitle {
+        font-size: 1.5rem;
+    }
+
+    .positionTitle {
+        font-size: 1.25rem;
+        flex-direction: column;
+    }
+
+    .sequenceContainer {
+        gap: 1rem;
+    }
+
+    .sequenceImage {
+        width: 120px;
+        height: 120px;
+    }
+
+    .arrow svg {
+        width: 24px;
+        height: 24px;
+    }
+
+    .positionSection {
+        padding: 1.5rem 1rem;
+    }
+
+    .footer {
+        flex-direction: column;
+    }
+
+    .button {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
+@media (max-width: 480px) {
+    .sequenceImage {
+        width: 100px;
+        height: 100px;
+    }
+
+    .sequenceContainer {
+        flex-direction: column;
+    }
+
+    .arrow {
+        transform: rotate(90deg);
+    }
+}

@@ -16,7 +16,7 @@ def build_explain_letter_pronounciation_messages(
     letter: The letter the user was tasked with pronouncing.
     status: Whether the user's pronounciation was accepable. Can be either pass or fail.
     transcription: A transcription of what the user said when attempting to pronounce the letter.
-    previous_feedback: The feedback a fellow teacher gave on the student's pronounciation of the letter.
+    previous_feedback: The conversation regarding performance on pronouncing the letter between the AI system and the student, with string elements at even indices representing the AI responses and the elements at odd indices representing user questions.
     mistake_tags: A list of strings of tags that refer to common pronounciation errors.
     performance_reflection: A summary of the user's pronounciation and mistakes made by your fellow teacher who evaluated the student's pronounciation.
 

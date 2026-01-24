@@ -279,7 +279,7 @@ class PronounciationService():
         letter = input.letter
         status = input.status
         transcription = input.transcription
-        previous_feedback = input.previous_feedback
+        previous_feedback = str(input.previous_feedback)
         mistake_tags_string = str(input.mistake_tags)
         performance_reflection = input.performance_reflection
 
@@ -313,7 +313,7 @@ class PronounciationService():
         word = input.word
         status = input.status
         transcription = input.transcription
-        previous_feedback = input.previous_feedback
+        previous_feedback = str(input.previous_feedback)
         mistake_tags_string = str(input.mistake_tags)
         performance_reflection = input.performance_reflection
 

@@ -80,7 +80,6 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
                 }
               );
               
-              // IDK what do here for now
               if(!clearUserCourseResponse.ok){
                 setIsLoading(false);
                 const errorData = await clearUserCourseResponse.json();
@@ -113,6 +112,7 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
         }
       } else if(!user.current_course){
         setIsLoading(false);
+        setUserCourseProgress(null); // Just in case
         router.replace("/language-selection");
         return;
       } else if (isPublicRoute) {

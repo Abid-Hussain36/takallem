@@ -230,14 +230,14 @@ const VocabReadingProblemSets = () => {
                     const finalProgress = await clearSetCounterResponse.json();
                     setUserCourseProgress(finalProgress);
                 }
+
+                setResource(null);
+                router.replace("/");
             } catch(err){
                 setError(err instanceof Error ? err.message : "Error in resetting progress counters.");
             } finally{
                 setIsLoading(false);
             }
-
-            setResource(null);
-            router.replace("/");
         } else if(atSetEnd && !exerciseComplete) {
             setIsLoading(true);
             const authToken = localStorage.getItem("token");

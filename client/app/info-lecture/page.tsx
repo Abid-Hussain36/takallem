@@ -32,15 +32,13 @@ const InfoLecture = () => {
     }
 
     const handleNext = async () => {
-        setResource(null);
-
-        if(userCourseProgress?.curr_module === resource.number){
+        if(userCourseProgress!.curr_module === resource.number){
             setIsLoading(true);
             const authToken = localStorage.getItem("token");
 
             try {
                 const incrementUserCourseProgress = await fetch(
-                    `${process.env.NEXT_PUBLIC_SERVER_URL}/user-course-progress/curr_module/increment/${userCourseProgress.id}`,
+                    `${process.env.NEXT_PUBLIC_SERVER_URL}/user-course-progress/curr_module/increment/${userCourseProgress!.id}`,
                     {
                         method: "PUT",
                         headers: {
@@ -54,6 +52,9 @@ const InfoLecture = () => {
                     const errorData = await incrementUserCourseProgress.json();
                     throw new Error(errorData.detail || "Failed to increment userCourseProgress")
                 }
+
+                const newUserCourseProgress = await incrementUserCourseProgress.json();
+                setUserCourseProgress(newUserCourseProgress);
             } catch(err){
                 setError(err instanceof Error ? err.message : "Error in updating userCourseProgress.");
             } finally{
@@ -61,6 +62,7 @@ const InfoLecture = () => {
             }
         }
 
+        setResource(null);
         router.replace("/");
     }
 

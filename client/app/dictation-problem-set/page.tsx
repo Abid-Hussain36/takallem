@@ -2,15 +2,15 @@
 
 import { useResource } from "@/context/ResourceContext"
 import { useUserCourseProgress } from "@/context/UserCourseProgressContext";
-import { LetterWritingProblemSetResponse } from "@/types/response_models/ResourceResponse";
-import { LetterWritingResponse, WritingPhotoRetakeResponse } from "@/types/response_models/LetterWritingResponse";
+import { DictationProblemSetResponse } from "@/types/response_models/ResourceResponse";
+import { DictationResponse, WritingPhotoRetakeResponse } from "@/types/response_models/LetterWritingResponse";
 import { useRouter } from "next/navigation";
 import { useState, useEffect, useRef } from "react";
-import styles from './LetterWritingProblemSet.module.css';
+import styles from './DictationProblemSet.module.css';
 
 type ProgressStatus = 'unanswered' | 'current' | 'correct';
 
-const LetterWritingProblemSet = () => {
+const DictationProblemSet = () => {
     const router = useRouter();
 
     // Contexts
@@ -26,7 +26,7 @@ const LetterWritingProblemSet = () => {
         return (
             <div className={styles.loading}>
                 <div className={styles.spinner}></div>
-                <p className={styles.loadingText}>Loading letter writing problems...</p>
+                <p className={styles.loadingText}>Loading dictation problems...</p>
             </div>
         );
     }
@@ -35,14 +35,18 @@ const LetterWritingProblemSet = () => {
     const problemCounter = userCourseProgress!.problem_counter;
     
     // Resource
-    const letterWritingProblemSet = resource.resource as LetterWritingProblemSetResponse;
-    const problems = letterWritingProblemSet.problems;
+    const dictationProblemSet = resource.resource as DictationProblemSetResponse;
+    const problems = dictationProblemSet.problems;
     const problem = problems[problemCounter];
+
+    // Audio State
+    const [isPlaying, setIsPlaying] = useState<boolean>(false);
+    const audioRef = useRef<HTMLAudioElement | null>(null);
 
     // Writing Data per problem
     const [uploadedImage, setUploadedImage] = useState<File | null>(null);
     const [imagePreview, setImagePreview] = useState<string | null>(null);
-    const [writingResponse, setWritingResponse] = useState<LetterWritingResponse | null>(null);
+    const [dictationResponse, setDictationResponse] = useState<DictationResponse | null>(null);
     const [showFeedback, setShowFeedback] = useState<boolean>(false);
     const [passed, setPassed] = useState<boolean>(false);
     
@@ -73,13 +77,57 @@ const LetterWritingProblemSet = () => {
         // Reset state for new problem
         setUploadedImage(null);
         setImagePreview(null);
-        setWritingResponse(null);
+        setDictationResponse(null);
         setShowFeedback(false);
         setPassed(false);
+        setIsPlaying(false);
         if (fileInputRef.current) {
             fileInputRef.current.value = '';
         }
+        if (audioRef.current) {
+            audioRef.current.pause();
+            audioRef.current.currentTime = 0;
+        }
     }, [problemCounter]);
+
+    // Audio event listeners
+    useEffect(() => {
+        const audio = audioRef.current;
+        if (!audio) return;
+
+        const handleAudioEnd = () => {
+            setIsPlaying(false);
+        };
+
+        const handleAudioPlay = () => {
+            setIsPlaying(true);
+        };
+
+        const handleAudioPause = () => {
+            setIsPlaying(false);
+        };
+
+        audio.addEventListener('ended', handleAudioEnd);
+        audio.addEventListener('play', handleAudioPlay);
+        audio.addEventListener('pause', handleAudioPause);
+
+        return () => {
+            audio.removeEventListener('ended', handleAudioEnd);
+            audio.removeEventListener('play', handleAudioPlay);
+            audio.removeEventListener('pause', handleAudioPause);
+        };
+    }, [audioRef.current]);
+
+    // Play audio
+    const handlePlayAudio = () => {
+        if (audioRef.current) {
+            if (isPlaying) {
+                audioRef.current.pause();
+            } else {
+                audioRef.current.play();
+            }
+        }
+    };
 
     // Handle file selection
     const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -132,18 +180,10 @@ const LetterWritingProblemSet = () => {
             const formData = new FormData();
             
             formData.append('user_image', uploadedImage);
-            
-            // Fetch the reference image
-            const referenceResponse = await fetch(problem.reference_writing);
-            const referenceBlob = await referenceResponse.blob();
-            const referenceFile = new File([referenceBlob], 'reference.png', { type: 'image/png' });
-            formData.append('target_image', referenceFile);
-            
-            formData.append('letter', problem.letter);
-            formData.append('position', problem.position);
+            formData.append('target_word', problem.word);
 
             const response = await fetch(
-                `${process.env.NEXT_PUBLIC_SERVER_URL}/letter/writing/alphabet`,
+                `${process.env.NEXT_PUBLIC_SERVER_URL}/letter/writing/dictation`,
                 {
                     method: 'POST',
                     headers: {
@@ -168,12 +208,12 @@ const LetterWritingProblemSet = () => {
                 return;
             }
 
-            const writingResult = result as LetterWritingResponse;
-            setWritingResponse(writingResult);
+            const dictationResult = result as DictationResponse;
+            setDictationResponse(dictationResult);
             setShowFeedback(true);
 
             // Check if passed
-            if (writingResult.status === 'pass') {
+            if (dictationResult.status === 'pass') {
                 setPassed(true);
                 
                 // Update progress status to correct
@@ -317,40 +357,38 @@ const LetterWritingProblemSet = () => {
                 {/* Question Section */}
                 <div className={styles.questionSection}>
                     <h1 className={styles.questionText}>
-                        Write the letter in {problem.position} position:
+                        Write the word you heard:
                     </h1>
-                    <div className={styles.letterDisplay}>
-                        {problem.letter}
+                    
+                    {/* Audio Player with Wave Animation */}
+                    <div className={styles.audioPlayerContainer}>
+                        <button 
+                            className={styles.audioButton}
+                            onClick={handlePlayAudio}
+                        >
+                            {isPlaying ? (
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                            ) : (
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                            )}
+                        </button>
+                        
+                        {/* Wave Animation */}
+                        <div className={styles.waveContainer}>
+                            <div className={`${styles.wave} ${isPlaying ? styles.active : ''}`}></div>
+                            <div className={`${styles.wave} ${isPlaying ? styles.active : ''}`}></div>
+                            <div className={`${styles.wave} ${isPlaying ? styles.active : ''}`}></div>
+                            <div className={`${styles.wave} ${isPlaying ? styles.active : ''}`}></div>
+                        </div>
                     </div>
-                    <span className={styles.positionBadge}>
-                        {problem.position} Form
-                    </span>
-                </div>
-
-                {/* Reference Sequence Section */}
-                <div className={styles.referenceSection}>
-                    <h2 className={styles.referenceTitle}>
-                        Writing Sequence Reference
-                    </h2>
-                    <div className={styles.sequenceContainer}>
-                        {[...problem.writing_sequence.sequence_images].reverse().map((image, idx, arr) => (
-                            <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                                <img 
-                                    src={image} 
-                                    alt={`Step ${arr.length - idx}`}
-                                    className={styles.sequenceImage}
-                                />
-                                
-                                {idx < arr.length - 1 && (
-                                    <div className={styles.arrow}>
-                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M13 7l-5 5 5 5" />
-                                        </svg>
-                                    </div>
-                                )}
-                            </div>
-                        ))}
-                    </div>
+                    
+                    {/* Hidden Audio Element */}
+                    <audio ref={audioRef} src={problem.word_audio} />
                 </div>
 
                 {/* Upload Section */}
@@ -403,12 +441,12 @@ const LetterWritingProblemSet = () => {
                 </div>
 
                 {/* Feedback Section */}
-                {showFeedback && writingResponse && (
+                {showFeedback && dictationResponse && (
                     <div className={styles.feedbackSection}>
                         <div className={styles.feedbackHeader}>
                             <h2 className={styles.feedbackTitle}>AI Feedback</h2>
-                            <span className={`${styles.statusBadge} ${styles[writingResponse.status]}`}>
-                                {writingResponse.status === 'pass' ? (
+                            <span className={`${styles.statusBadge} ${styles[dictationResponse.status]}`}>
+                                {dictationResponse.status === 'pass' ? (
                                     <>
                                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
@@ -426,40 +464,60 @@ const LetterWritingProblemSet = () => {
                             </span>
                         </div>
 
+                        {/* Detected Word Section */}
+                        <div className={styles.detectedWordSection}>
+                            <div className={styles.detectedWordLabel}>AI Detected Word:</div>
+                            <div className={styles.detectedWord}>{dictationResponse.detected_word}</div>
+                        </div>
+
                         {/* Scores Grid */}
                         <div className={styles.scoresGrid}>
                             <div className={styles.scoreCard}>
-                                <div className={styles.scoreLabel}>Legibility</div>
+                                <div className={styles.scoreLabel}>Word Accuracy</div>
                                 <div className={styles.scoreValue}>
-                                    {writingResponse.scores.legibility.toFixed(1)}
+                                    {dictationResponse.scores.word_accuracy.toFixed(1)}
                                     <span className={styles.scorePercentage}>%</span>
                                 </div>
                             </div>
                             <div className={styles.scoreCard}>
-                                <div className={styles.scoreLabel}>Form Accuracy</div>
+                                <div className={styles.scoreLabel}>Letter Identity</div>
                                 <div className={styles.scoreValue}>
-                                    {writingResponse.scores.form_accuracy.toFixed(1)}
+                                    {dictationResponse.scores.letter_identity.toFixed(1)}
+                                    <span className={styles.scorePercentage}>%</span>
+                                </div>
+                            </div>
+                            <div className={styles.scoreCard}>
+                                <div className={styles.scoreLabel}>Joining Quality</div>
+                                <div className={styles.scoreValue}>
+                                    {dictationResponse.scores.joining_quality.toFixed(1)}
+                                    <span className={styles.scorePercentage}>%</span>
+                                </div>
+                            </div>
+                            <div className={styles.scoreCard}>
+                                <div className={styles.scoreLabel}>Legibility</div>
+                                <div className={styles.scoreValue}>
+                                    {dictationResponse.scores.legibility.toFixed(1)}
                                     <span className={styles.scorePercentage}>%</span>
                                 </div>
                             </div>
                             <div className={styles.scoreCard}>
                                 <div className={styles.scoreLabel}>Dots & Diacritics</div>
                                 <div className={styles.scoreValue}>
-                                    {writingResponse.scores.dots_diacritics.toFixed(1)}
+                                    {dictationResponse.scores.dots_diacritics.toFixed(1)}
                                     <span className={styles.scorePercentage}>%</span>
                                 </div>
                             </div>
                             <div className={styles.scoreCard}>
-                                <div className={styles.scoreLabel}>Baseline & Proportion</div>
+                                <div className={styles.scoreLabel}>Baseline & Spacing</div>
                                 <div className={styles.scoreValue}>
-                                    {writingResponse.scores.baseline_proportion.toFixed(1)}
+                                    {dictationResponse.scores.baseline_spacing.toFixed(1)}
                                     <span className={styles.scorePercentage}>%</span>
                                 </div>
                             </div>
                             <div className={styles.scoreCard}>
                                 <div className={styles.scoreLabel}>Overall Score</div>
                                 <div className={styles.scoreValue}>
-                                    {writingResponse.scores.overall.toFixed(1)}
+                                    {dictationResponse.scores.overall.toFixed(1)}
                                     <span className={styles.scorePercentage}>%</span>
                                 </div>
                             </div>
@@ -467,13 +525,13 @@ const LetterWritingProblemSet = () => {
 
                         {/* Feedback Text */}
                         <div className={styles.feedbackText}>
-                            {writingResponse.feedback}
+                            {dictationResponse.feedback}
                         </div>
 
                         {/* Mistake Tags */}
-                        {writingResponse.mistake_tags.length > 0 && (
+                        {dictationResponse.mistake_tags.length > 0 && (
                             <div className={styles.mistakeTags}>
-                                {writingResponse.mistake_tags.map((tag, idx) => (
+                                {dictationResponse.mistake_tags.map((tag, idx) => (
                                     <span key={idx} className={styles.mistakeTag}>
                                         {tag}
                                     </span>
@@ -539,4 +597,4 @@ const LetterWritingProblemSet = () => {
     );
 };
 
-export default LetterWritingProblemSet;
+export default DictationProblemSet;

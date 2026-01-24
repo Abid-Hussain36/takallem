@@ -106,6 +106,7 @@ export default function Login() {
                   setUser(clearUserCourseData);
                   
                   router.replace("/language-selection");
+                  return;
                 }
     
                 const userCourseProgressData = await getUserCourseProgressResponse.json();

@@ -27,6 +27,7 @@ export default function Home() {
     setUser(null);
     setUserCourseProgress(null);
     setModules(null);
+    setResource(null);
     router.replace("/login");
   }
 

@@ -65,6 +65,13 @@ export interface LetterWritingProblemResponse {
     writing_sequence: LetterWritingSequenceResponse;
 }
 
+export interface LetterJoiningProblemResponse {
+    id: number;
+    problem_set_id: number;
+    word: string;
+    letter_list: string[];
+}
+
 export interface LetterRecognitionProblemResponse {
     id: number;
     problem_set_id: number;
@@ -79,6 +86,22 @@ export interface WordPronounciationProblemResponse {
     question: string;
     word: string;
     word_audio: string;
+}
+
+export interface DictationProblemResponse {
+    id: number;
+    problem_set_id: number;
+    word: string;
+    word_audio: string;
+}
+
+export interface DiscriminationProblemResponse {
+    id: number;
+    problem_set_id: number;
+    word_audio: string;
+    incorrect_word_audio: string;
+    answer_choices: string[];
+    correct_answer: string;
 }
 
 // Problem Set Responses
@@ -164,6 +187,24 @@ export interface LetterWritingProblemSetResponse extends BaseResource {
     problems: LetterWritingProblemResponse[];
 }
 
+export interface LetterJoiningProblemSetResponse extends BaseResource {
+    resource_type: ResourceType.LETTER_JOINING_PROBLEM_SET;
+    problem_count: number;
+    problems: LetterJoiningProblemResponse[];
+}
+
+export interface DictationProblemSetResponse extends BaseResource {
+    resource_type: ResourceType.DICTATION_PROBLEM_SET;
+    problem_count: number;
+    problems: DictationProblemResponse[];
+}
+
+export interface DiscriminationProblemSetResponse extends BaseResource {
+    resource_type: ResourceType.DISCRIMINATION_PROBLEM_SET;
+    problem_count: number;
+    problems: DiscriminationProblemResponse[];
+}
+
 export interface VocabReadingProblemSetsResponse extends BaseResource {
     resource_type: ResourceType.VOCAB_READING_PROBLEM_SETS;
     set_limit: number;
@@ -198,6 +239,9 @@ export type PolymorphicResource =
     | WordPronounciationProblemSetResponse
     | LetterRecognitionProblemSetResponse
     | LetterWritingProblemSetResponse
+    | LetterJoiningProblemSetResponse
+    | DictationProblemSetResponse
+    | DiscriminationProblemSetResponse
     | VocabReadingProblemSetsResponse
     | VocabListeningProblemSetsResponse
     | VocabSpeakingProblemSetsResponse

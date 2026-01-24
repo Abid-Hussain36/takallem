@@ -1,13 +1,13 @@
 import { useResource } from "@/context/ResourceContext"
 import { useUserCourseProgress } from "@/context/UserCourseProgressContext";
-import { LetterRecognitionProblemSetResponse } from "@/types/response_models/ResourceResponse";
+import { DiscriminationProblemSetResponse } from "@/types/response_models/ResourceResponse";
 import { useRouter } from "next/navigation";
-import { useState, useEffect } from "react";
-import styles from './LetterRecognitionProblemSet.module.css';
+import { useState, useEffect, useRef } from "react";
+import styles from './DiscriminationProblemSet.module.css';
 
 type ProgressStatus = 'unanswered' | 'current' | 'correct' | 'incorrect';
 
-const LetterRecognitionProblemSet = () => {
+const DiscriminationProblemSet = () => {
     const router = useRouter();
 
     // Contexts
@@ -22,12 +22,15 @@ const LetterRecognitionProblemSet = () => {
     const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
     const [answered, setAnswered] = useState<boolean>(false);
     const [showConfetti, setShowConfetti] = useState<boolean>(false);
+    const [isPlaying, setIsPlaying] = useState<boolean>(false);
+
+    const audioRef = useRef<HTMLAudioElement | null>(null);
 
     if (!resource || !resource.resource) {
         return (
             <div className={styles.loading}>
                 <div className={styles.spinner}></div>
-                <p className={styles.loadingText}>Loading letter recognition problems...</p>
+                <p className={styles.loadingText}>Loading letter discrimination problems...</p>
             </div>
         );
     }
@@ -36,11 +39,12 @@ const LetterRecognitionProblemSet = () => {
     const problemCounter = userCourseProgress!.problem_counter;
     
     // Resource
-    const letterRecognitionProblemSet = resource.resource as LetterRecognitionProblemSetResponse;
-    const problems = letterRecognitionProblemSet.problems;
+    const discriminationProblemSet = resource.resource as DiscriminationProblemSetResponse;
+    const problems = discriminationProblemSet.problems;
     const problem = problems[problemCounter];
-    const answerChoices = problem.answer_choices;
-    const correctAnswer = problem.word;
+    const answerChoices: string[] = problem.answer_choices;
+    const correctAnswer: string = problem.correct_answer;
+    const audioUrl: string = problem.word_audio;
 
     // Completion logic
     const minPoints = problems.length - 1;
@@ -64,6 +68,56 @@ const LetterRecognitionProblemSet = () => {
         }
     }, [problemCounter, answered]);
 
+    // Handle audio playback
+    const handlePlayAudio = () => {
+        if (audioRef.current) {
+            if (isPlaying) {
+                audioRef.current.pause();
+                setIsPlaying(false);
+            } else {
+                audioRef.current.play();
+                setIsPlaying(true);
+            }
+        }
+    };
+
+    // Audio event listeners
+    useEffect(() => {
+        const audio = audioRef.current;
+        if (!audio) return;
+
+        const handleAudioEnd = () => {
+            setIsPlaying(false);
+        };
+
+        const handlePlay = () => {
+            setIsPlaying(true);
+        };
+
+        const handlePause = () => {
+            setIsPlaying(false);
+        };
+
+        audio.addEventListener('ended', handleAudioEnd);
+        audio.addEventListener('play', handlePlay);
+        audio.addEventListener('pause', handlePause);
+
+        return () => {
+            audio.removeEventListener('ended', handleAudioEnd);
+            audio.removeEventListener('play', handlePlay);
+            audio.removeEventListener('pause', handlePause);
+        };
+    }, [audioRef.current]);
+
+    // Pause and reset audio when problem changes
+    useEffect(() => {
+        if (audioRef.current) {
+            audioRef.current.pause();
+            audioRef.current.currentTime = 0;
+            setIsPlaying(false);
+        }
+    }, [problemCounter]);
+
     const handleAnswerSelection = (choice: string) => {
         if (answered) return; // Prevent multiple clicks
 
@@ -85,7 +139,7 @@ const LetterRecognitionProblemSet = () => {
             // Increment points
             setPoints(points + 1);
         }
-    }
+    };
 
     const handleHomeNav = () => {
         setResource(null);
@@ -258,10 +312,33 @@ const LetterRecognitionProblemSet = () => {
             {/* Main Content */}
             <div className={styles.mainContent}>
                 <div className={styles.questionSection}>
-                    <h1 className={styles.questionText}>Which letter is in the word in the right form?</h1>
-                    <div className={styles.wordCard}>
-                        <p className={styles.wordText}>{problem.word}</p>
+                    <h1 className={styles.questionText}>Which letter did you hear?</h1>
+                    
+                    {/* Audio Player */}
+                    <div className={styles.audioPlayerContainer}>
+                        <button className={styles.audioButton} onClick={handlePlayAudio}>
+                            {isPlaying ? (
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                                    <path fillRule="evenodd" d="M6.75 5.25a.75.75 0 01.75-.75H9a.75.75 0 01.75.75v13.5a.75.75 0 01-.75.75H7.5a.75.75 0 01-.75-.75V5.25zm7.5 0A.75.75 0 0115 4.5h1.5a.75.75 0 01.75.75v13.5a.75.75 0 01-.75.75H15a.75.75 0 01-.75-.75V5.25z" clipRule="evenodd" />
+                                </svg>
+                            ) : (
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                                    <path fillRule="evenodd" d="M4.5 5.653c0-1.426 1.529-2.33 2.779-1.643l11.54 6.348c1.295.712 1.295 2.573 0 3.285L7.28 19.991c-1.25.687-2.779-.217-2.779-1.643V5.653z" clipRule="evenodd" />
+                                </svg>
+                            )}
+                        </button>
+
+                        {/* Wave Animation */}
+                        <div className={styles.waveContainer}>
+                            <div className={`${styles.wave} ${isPlaying ? styles.active : ''}`}></div>
+                            <div className={`${styles.wave} ${isPlaying ? styles.active : ''}`}></div>
+                            <div className={`${styles.wave} ${isPlaying ? styles.active : ''}`}></div>
+                            <div className={`${styles.wave} ${isPlaying ? styles.active : ''}`}></div>
+                        </div>
                     </div>
+
+                    {/* Hidden audio element */}
+                    <audio ref={audioRef} src={audioUrl} />
                 </div>
 
                 {/* Answer Grid */}
@@ -330,4 +407,4 @@ const LetterRecognitionProblemSet = () => {
     );
 }
 
-export default LetterRecognitionProblemSet;
+export default DiscriminationProblemSet;

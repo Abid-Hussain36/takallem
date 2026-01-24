@@ -176,7 +176,7 @@ class UserCourseProgressService:
         return progress.to_model()
 
     def clear_problem_counter(self, db: Session, id: int) -> UserCourseProgressResponse:
-        """Sets the problem_counter to 1"""
+        """Sets the problem_counter to 0"""
         progress = db.query(UserCourseProgress).filter(UserCourseProgress.id == id).first()
         
         if not progress:
@@ -185,7 +185,7 @@ class UserCourseProgressService:
                 detail="User course progress not found"
             )
         
-        progress.problem_counter = 1
+        progress.problem_counter = 0
         db.commit()
         db.refresh(progress)
         
@@ -209,7 +209,7 @@ class UserCourseProgressService:
             )
         
         if progress.current_vocab_problem_set == limit:
-            progress.current_vocab_problem_set = 1
+            progress.current_vocab_problem_set = 0
         else:
             progress.current_vocab_problem_set += 1
         

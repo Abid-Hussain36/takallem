@@ -14,7 +14,7 @@ class LetterPronounciationExplainInput(BaseModel):
     letter: str
     status: Literal["pass", "fail"]
     transcription: str
-    previous_feedback: str
+    previous_feedback: List[str]
     mistake_tags: List[str]
     performance_reflection: str
 
@@ -23,7 +23,7 @@ class LetterWordPronounciationExplainInput(BaseModel):
     word: str
     status: Literal["pass", "fail"]
     transcription: str
-    previous_feedback: str
+    previous_feedback: List[str]
     mistake_tags: List[str]
     performance_reflection: str
 

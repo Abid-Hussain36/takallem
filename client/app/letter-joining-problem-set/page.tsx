@@ -2,15 +2,15 @@
 
 import { useResource } from "@/context/ResourceContext"
 import { useUserCourseProgress } from "@/context/UserCourseProgressContext";
-import { LetterWritingProblemSetResponse } from "@/types/response_models/ResourceResponse";
-import { LetterWritingResponse, WritingPhotoRetakeResponse } from "@/types/response_models/LetterWritingResponse";
+import { LetterJoiningProblemSetResponse } from "@/types/response_models/ResourceResponse";
+import { LetterJoiningResponse, WritingPhotoRetakeResponse } from "@/types/response_models/LetterWritingResponse";
 import { useRouter } from "next/navigation";
 import { useState, useEffect, useRef } from "react";
-import styles from './LetterWritingProblemSet.module.css';
+import styles from './LetterJoiningProblemSet.module.css';
 
 type ProgressStatus = 'unanswered' | 'current' | 'correct';
 
-const LetterWritingProblemSet = () => {
+const LetterJoiningProblemSet = () => {
     const router = useRouter();
 
     // Contexts
@@ -26,7 +26,7 @@ const LetterWritingProblemSet = () => {
         return (
             <div className={styles.loading}>
                 <div className={styles.spinner}></div>
-                <p className={styles.loadingText}>Loading letter writing problems...</p>
+                <p className={styles.loadingText}>Loading letter joining problems...</p>
             </div>
         );
     }
@@ -35,14 +35,14 @@ const LetterWritingProblemSet = () => {
     const problemCounter = userCourseProgress!.problem_counter;
     
     // Resource
-    const letterWritingProblemSet = resource.resource as LetterWritingProblemSetResponse;
-    const problems = letterWritingProblemSet.problems;
+    const letterJoiningProblemSet = resource.resource as LetterJoiningProblemSetResponse;
+    const problems = letterJoiningProblemSet.problems;
     const problem = problems[problemCounter];
 
     // Writing Data per problem
     const [uploadedImage, setUploadedImage] = useState<File | null>(null);
     const [imagePreview, setImagePreview] = useState<string | null>(null);
-    const [writingResponse, setWritingResponse] = useState<LetterWritingResponse | null>(null);
+    const [joiningResponse, setJoiningResponse] = useState<LetterJoiningResponse | null>(null);
     const [showFeedback, setShowFeedback] = useState<boolean>(false);
     const [passed, setPassed] = useState<boolean>(false);
     
@@ -73,7 +73,7 @@ const LetterWritingProblemSet = () => {
         // Reset state for new problem
         setUploadedImage(null);
         setImagePreview(null);
-        setWritingResponse(null);
+        setJoiningResponse(null);
         setShowFeedback(false);
         setPassed(false);
         if (fileInputRef.current) {
@@ -133,17 +133,15 @@ const LetterWritingProblemSet = () => {
             
             formData.append('user_image', uploadedImage);
             
-            // Fetch the reference image
-            const referenceResponse = await fetch(problem.reference_writing);
-            const referenceBlob = await referenceResponse.blob();
-            const referenceFile = new File([referenceBlob], 'reference.png', { type: 'image/png' });
-            formData.append('target_image', referenceFile);
+            // Add letter_list as individual form entries
+            problem.letter_list.forEach((letter) => {
+                formData.append('letter_list', letter);
+            });
             
-            formData.append('letter', problem.letter);
-            formData.append('position', problem.position);
+            formData.append('target_word', problem.word);
 
             const response = await fetch(
-                `${process.env.NEXT_PUBLIC_SERVER_URL}/letter/writing/alphabet`,
+                `${process.env.NEXT_PUBLIC_SERVER_URL}/letter/writing/joining`,
                 {
                     method: 'POST',
                     headers: {
@@ -168,12 +166,12 @@ const LetterWritingProblemSet = () => {
                 return;
             }
 
-            const writingResult = result as LetterWritingResponse;
-            setWritingResponse(writingResult);
+            const joiningResult = result as LetterJoiningResponse;
+            setJoiningResponse(joiningResult);
             setShowFeedback(true);
 
             // Check if passed
-            if (writingResult.status === 'pass') {
+            if (joiningResult.status === 'pass') {
                 setPassed(true);
                 
                 // Update progress status to correct
@@ -317,40 +315,22 @@ const LetterWritingProblemSet = () => {
                 {/* Question Section */}
                 <div className={styles.questionSection}>
                     <h1 className={styles.questionText}>
-                        Write the letter in {problem.position} position:
+                        Write the joined word formed from these letters:
                     </h1>
-                    <div className={styles.letterDisplay}>
-                        {problem.letter}
-                    </div>
-                    <span className={styles.positionBadge}>
-                        {problem.position} Form
-                    </span>
-                </div>
-
-                {/* Reference Sequence Section */}
-                <div className={styles.referenceSection}>
-                    <h2 className={styles.referenceTitle}>
-                        Writing Sequence Reference
-                    </h2>
-                    <div className={styles.sequenceContainer}>
-                        {[...problem.writing_sequence.sequence_images].reverse().map((image, idx, arr) => (
+                    <div className={styles.lettersDisplay}>
+                        {/* Display letters right-to-left with + between them */}
+                        {[...problem.letter_list].reverse().map((letter, idx, arr) => (
                             <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                                <img 
-                                    src={image} 
-                                    alt={`Step ${arr.length - idx}`}
-                                    className={styles.sequenceImage}
-                                />
-                                
+                                <span className={styles.letter}>{letter}</span>
                                 {idx < arr.length - 1 && (
-                                    <div className={styles.arrow}>
-                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M13 7l-5 5 5 5" />
-                                        </svg>
-                                    </div>
+                                    <span className={styles.plusSign}>+</span>
                                 )}
                             </div>
                         ))}
                     </div>
+                    <span className={styles.targetWord}>
+                        Target Word: {problem.word}
+                    </span>
                 </div>
 
                 {/* Upload Section */}
@@ -403,12 +383,12 @@ const LetterWritingProblemSet = () => {
                 </div>
 
                 {/* Feedback Section */}
-                {showFeedback && writingResponse && (
+                {showFeedback && joiningResponse && (
                     <div className={styles.feedbackSection}>
                         <div className={styles.feedbackHeader}>
                             <h2 className={styles.feedbackTitle}>AI Feedback</h2>
-                            <span className={`${styles.statusBadge} ${styles[writingResponse.status]}`}>
-                                {writingResponse.status === 'pass' ? (
+                            <span className={`${styles.statusBadge} ${styles[joiningResponse.status]}`}>
+                                {joiningResponse.status === 'pass' ? (
                                     <>
                                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
@@ -429,37 +409,44 @@ const LetterWritingProblemSet = () => {
                         {/* Scores Grid */}
                         <div className={styles.scoresGrid}>
                             <div className={styles.scoreCard}>
-                                <div className={styles.scoreLabel}>Legibility</div>
+                                <div className={styles.scoreLabel}>Connection Accuracy</div>
                                 <div className={styles.scoreValue}>
-                                    {writingResponse.scores.legibility.toFixed(1)}
+                                    {joiningResponse.scores.connection_accuracy.toFixed(1)}
                                     <span className={styles.scorePercentage}>%</span>
                                 </div>
                             </div>
                             <div className={styles.scoreCard}>
-                                <div className={styles.scoreLabel}>Form Accuracy</div>
+                                <div className={styles.scoreLabel}>Positional Forms</div>
                                 <div className={styles.scoreValue}>
-                                    {writingResponse.scores.form_accuracy.toFixed(1)}
+                                    {joiningResponse.scores.positional_forms.toFixed(1)}
+                                    <span className={styles.scorePercentage}>%</span>
+                                </div>
+                            </div>
+                            <div className={styles.scoreCard}>
+                                <div className={styles.scoreLabel}>Spacing & Flow</div>
+                                <div className={styles.scoreValue}>
+                                    {joiningResponse.scores.spacing_flow.toFixed(1)}
+                                    <span className={styles.scorePercentage}>%</span>
+                                </div>
+                            </div>
+                            <div className={styles.scoreCard}>
+                                <div className={styles.scoreLabel}>Baseline Consistency</div>
+                                <div className={styles.scoreValue}>
+                                    {joiningResponse.scores.baseline_consistency.toFixed(1)}
                                     <span className={styles.scorePercentage}>%</span>
                                 </div>
                             </div>
                             <div className={styles.scoreCard}>
                                 <div className={styles.scoreLabel}>Dots & Diacritics</div>
                                 <div className={styles.scoreValue}>
-                                    {writingResponse.scores.dots_diacritics.toFixed(1)}
-                                    <span className={styles.scorePercentage}>%</span>
-                                </div>
-                            </div>
-                            <div className={styles.scoreCard}>
-                                <div className={styles.scoreLabel}>Baseline & Proportion</div>
-                                <div className={styles.scoreValue}>
-                                    {writingResponse.scores.baseline_proportion.toFixed(1)}
+                                    {joiningResponse.scores.dots_diacritics.toFixed(1)}
                                     <span className={styles.scorePercentage}>%</span>
                                 </div>
                             </div>
                             <div className={styles.scoreCard}>
                                 <div className={styles.scoreLabel}>Overall Score</div>
                                 <div className={styles.scoreValue}>
-                                    {writingResponse.scores.overall.toFixed(1)}
+                                    {joiningResponse.scores.overall.toFixed(1)}
                                     <span className={styles.scorePercentage}>%</span>
                                 </div>
                             </div>
@@ -467,13 +454,13 @@ const LetterWritingProblemSet = () => {
 
                         {/* Feedback Text */}
                         <div className={styles.feedbackText}>
-                            {writingResponse.feedback}
+                            {joiningResponse.feedback}
                         </div>
 
                         {/* Mistake Tags */}
-                        {writingResponse.mistake_tags.length > 0 && (
+                        {joiningResponse.mistake_tags.length > 0 && (
                             <div className={styles.mistakeTags}>
-                                {writingResponse.mistake_tags.map((tag, idx) => (
+                                {joiningResponse.mistake_tags.map((tag, idx) => (
                                     <span key={idx} className={styles.mistakeTag}>
                                         {tag}
                                     </span>
@@ -539,4 +526,4 @@ const LetterWritingProblemSet = () => {
     );
 };
 
-export default LetterWritingProblemSet;
+export default LetterJoiningProblemSet;
