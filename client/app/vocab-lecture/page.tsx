@@ -20,15 +20,16 @@ const VocabLecture = () => {
     
     const audioRef = useRef<HTMLAudioElement | null>(null);
 
-    if (!resource || !resource.resource) {
-        return <div className={styles.loading}>Loading vocabulary...</div>;
-    }
-
-    const lectureData = resource.resource as VocabLectureResponse;
-    
-    // Filter vocab words by user's dialect
+    // Filter vocab words by user's dialect (must be before early return to follow hooks rules)
     const filteredVocabWords = useMemo(() => {
+        if (!resource?.resource) return [];
+        
+        const lectureData = resource.resource as VocabLectureResponse;
         const userDialect = userCourseProgress?.dialect;
+        
+        console.log("User dialect:", userDialect);
+        console.log("All vocab words:", lectureData.vocab_words);
+        console.log("Vocab word dialects:", lectureData.vocab_words.map(w => w.dialect));
         
         if (!userDialect) {
             // If no dialect selected, show all words or words with null dialect
@@ -36,10 +37,22 @@ const VocabLecture = () => {
         }
         
         // Show words matching user's dialect or universal words (null dialect)
-        return lectureData.vocab_words.filter(
-            word => word.dialect === null || word.dialect === userDialect
+        // Compare case-insensitively to handle potential mismatches
+        const filtered = lectureData.vocab_words.filter(
+            word => word.dialect === null || 
+                    word.dialect === userDialect ||
+                    word.dialect?.toUpperCase() === userDialect.toUpperCase()
         );
-    }, [lectureData.vocab_words, userCourseProgress?.dialect]);
+        
+        console.log("Filtered words:", filtered);
+        return filtered;
+    }, [resource?.resource, userCourseProgress?.dialect]);
+
+    if (!resource || !resource.resource) {
+        return <div className={styles.loading}>Loading vocabulary...</div>;
+    }
+
+    const lectureData = resource.resource as VocabLectureResponse;
 
     const handleHomeNav = () => {
         setResource(null);

@@ -1,5 +1,6 @@
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
+from sqlalchemy.orm.attributes import flag_modified
 from app.db.schemas.user_course_progress import UserCourseProgress
 from app.db.schemas.user import User
 from app.models.db.user.user_course_progress_response import UserCourseProgressResponse
@@ -112,12 +113,12 @@ class UserCourseProgressService:
         
         return progress.to_model()
 
-    def add_covered_word(self, db: Session, addCoveredWordRequest: AddCoveredWordReqest) -> AddCoveredWordResponse:
+    def add_covered_word(self, db: Session, addCoveredWordRequest: AddCoveredWordReqest) -> UserCourseProgressResponse:
         """Updates covered_words based on the logic specified"""
         id = addCoveredWordRequest.id
         word = addCoveredWordRequest.word
 
-        wordAdded = False
+        print(f"[DEBUG] add_covered_word called with id={id}, word={word}")
 
         progress = db.query(UserCourseProgress).filter(UserCourseProgress.id == id).first()
         
@@ -127,21 +128,34 @@ class UserCourseProgressService:
                 detail="User course progress not found"
             )
         
+        print(f"[DEBUG] Current covered_words before update: {progress.covered_words}")
+        print(f"[DEBUG] Current problem_counter before update: {progress.problem_counter}")
+        
         # If word not in covered_words
         if word not in progress.covered_words:
+            print(f"[DEBUG] Word not in covered_words, adding with value 1")
             progress.covered_words[word] = 1
-            wordAdded = True
         # If word value is 1
         elif progress.covered_words[word] == 1:
+            print(f"[DEBUG] Word value is 1, updating to 2 and incrementing counter")
             progress.covered_words[word] = 2
             progress.problem_counter += 1
-            wordAdded = True
-        # If word value is 2, do nothing (already handled by not having else)
+        else:
+            print(f"[DEBUG] Word already at value 2, no update needed")
+        
+        print(f"[DEBUG] Covered_words after update: {progress.covered_words}")
+        print(f"[DEBUG] Problem_counter after update: {progress.problem_counter}")
+        
+        # Flag the JSONB field as modified so SQLAlchemy knows to save it
+        flag_modified(progress, "covered_words")
         
         db.commit()
         db.refresh(progress)
         
-        return AddCoveredWordResponse(coveredWordAdded=wordAdded)
+        print(f"[DEBUG] After commit - covered_words: {progress.covered_words}")
+        print(f"[DEBUG] After commit - problem_counter: {progress.problem_counter}")
+        
+        return progress.to_model()
 
     def clear_covered_words(self, db: Session, id: int) -> UserCourseProgressResponse:
         """Clears the covered_words dictionary"""
@@ -209,7 +223,7 @@ class UserCourseProgressService:
             )
         
         if progress.current_vocab_problem_set == limit:
-            progress.current_vocab_problem_set = 0
+            progress.current_vocab_problem_set = 1
         else:
             progress.current_vocab_problem_set += 1
         

@@ -24,7 +24,7 @@ const VocabReadingProblemSets = () => {
     const [answered, setAnswered] = useState<boolean>(false);
     const [showConfetti, setShowConfetti] = useState<boolean>(false);
 
-    if (!resource || !resource.resource) {
+    if (!resource || !resource.resource || !userCourseProgress) {
         return (
             <div className={styles.loading}>
                 <div className={styles.spinner}></div>
@@ -34,13 +34,35 @@ const VocabReadingProblemSets = () => {
     }
 
     // UserCourseProgress Fields
-    const currVPS: number = userCourseProgress!.current_vocab_problem_set;
-    const problemCounter: number = userCourseProgress!.problem_counter;
+    // Safety: Ensure currVPS is at least 1 (fix for corrupted DB entries with 0)
+    const currVPS: number = Math.max(1, userCourseProgress.current_vocab_problem_set);
+    const problemCounter: number = userCourseProgress.problem_counter;
     
     // VocabReadingSets Data
     const vocabReadingProblemSetsData: VocabReadingProblemSetsResponse = resource.resource as VocabReadingProblemSetsResponse;
     const problemSetLimit = vocabReadingProblemSetsData.set_limit;
+    
+    // Debug logging
+    console.log("Current vocab problem set index:", currVPS);
+    console.log("Total problem sets available:", vocabReadingProblemSetsData.problem_sets.length);
+    console.log("All problem sets:", vocabReadingProblemSetsData.problem_sets);
+    console.log("Trying to access index:", currVPS - 1);
+    
     const vocabReadingProblemSetData = vocabReadingProblemSetsData.problem_sets[currVPS - 1];
+    
+    // Safety check: ensure the problem set exists
+    if (!vocabReadingProblemSetData || !vocabReadingProblemSetData.problems || vocabReadingProblemSetData.problems.length === 0) {
+        return (
+            <div className={styles.loading}>
+                <div className={styles.spinner}></div>
+                <p className={styles.loadingText}>
+                    No problems available for this set...<br/>
+                    Debug: currVPS={currVPS}, total sets={vocabReadingProblemSetsData.problem_sets.length}
+                </p>
+            </div>
+        );
+    }
+    
     const problems = vocabReadingProblemSetData.problems;
     const problem = problems[currProblemIdx];
     const answerChoices: string[] = problem.answer_choices;
@@ -48,7 +70,12 @@ const VocabReadingProblemSets = () => {
     
     // Stopping Variables
     const vocabReadingProblemSetLength = vocabReadingProblemSetData.problem_count;
-    const problemCounterStop = vocabReadingProblemSetLength * 2;
+    const problemCounterStop = vocabReadingProblemSetLength;
+
+    console.log("Problem count:", vocabReadingProblemSetLength);
+    console.log("Current problem counter:", problemCounter);
+    console.log("Problem counter stop (target):", problemCounterStop);
+    console.log("Exercise complete:", problemCounter === problemCounterStop);
 
     // End Booleans
     const atSetEnd = currProblemIdx === problems.length - 1;
@@ -101,6 +128,9 @@ const VocabReadingProblemSets = () => {
                     word: choice
                 }
                 
+                console.log("Adding word to covered_words:", choice);
+                console.log("Request payload:", addToCoveredWordsRequest);
+                
                 const addToCoveredWordsResponse = await fetch(
                     `${process.env.NEXT_PUBLIC_SERVER_URL}/user-course-progress/covered_words`,
                     {
@@ -113,34 +143,20 @@ const VocabReadingProblemSets = () => {
                     }
                 )
 
+                console.log("Response status:", addToCoveredWordsResponse.status);
+
                 if(!addToCoveredWordsResponse.ok){
                     const errorData = await addToCoveredWordsResponse.json();
+                    console.error("Error response:", errorData);
                     throw new Error(errorData.detail || "Failed to add to covered words")
                 }
 
-                const isWordAddedJson = await addToCoveredWordsResponse.json();
-                const isWordAdded = isWordAddedJson.coveredWordAdded;
-
-                if(isWordAdded){
-                    const incrementProblemCounterResponse = await fetch(
-                        `${process.env.NEXT_PUBLIC_SERVER_URL}/user-course-progress/problem_counter/increment/${userCourseProgress!.id}`,
-                        {
-                            method: "PUT",
-                            headers: {
-                                'Authorization': `Bearer ${authToken}`,
-                                'Content-Type': 'application/json'
-                            },
-                        }
-                    )
-    
-                    if(!incrementProblemCounterResponse.ok){
-                        const errorData = await incrementProblemCounterResponse.json();
-                        throw new Error(errorData.detail || "Failed to add to increment problem counter")
-                    }
-    
-                    const updatedUserCourseProgress = await incrementProblemCounterResponse.json();
-                    setUserCourseProgress(updatedUserCourseProgress);
-                }
+                // Backend now returns full updated UserCourseProgress (including covered_words and problem_counter)
+                const updatedUserCourseProgress = await addToCoveredWordsResponse.json();
+                console.log("Updated progress:", updatedUserCourseProgress);
+                console.log("Covered words:", updatedUserCourseProgress.covered_words);
+                console.log("Problem counter:", updatedUserCourseProgress.problem_counter);
+                setUserCourseProgress(updatedUserCourseProgress);
             } catch(err){
                 setError(err instanceof Error ? err.message : "Error in handling correct user answer selection.");
             } finally{

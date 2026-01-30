@@ -172,29 +172,9 @@ const VocabListeningProblemSets = () => {
                     throw new Error(errorData.detail || "Failed to add to covered words")
                 }
 
-                const isWordAddedJson = await addToCoveredWordsResponse.json();
-                const isWordAdded = isWordAddedJson.coveredWordAdded;
-
-                if(isWordAdded){
-                    const incrementProblemCounterResponse = await fetch(
-                        `${process.env.NEXT_PUBLIC_SERVER_URL}/user-course-progress/problem_counter/increment/${userCourseProgress!.id}`,
-                        {
-                            method: "PUT",
-                            headers: {
-                                'Authorization': `Bearer ${authToken}`,
-                                'Content-Type': 'application/json'
-                            },
-                        }
-                    )
-    
-                    if(!incrementProblemCounterResponse.ok){
-                        const errorData = await incrementProblemCounterResponse.json();
-                        throw new Error(errorData.detail || "Failed to add to increment problem counter")
-                    }
-    
-                    const updatedUserCourseProgress = await incrementProblemCounterResponse.json();
-                    setUserCourseProgress(updatedUserCourseProgress);
-                }
+                // Backend now returns full updated UserCourseProgress (including covered_words and problem_counter)
+                const updatedUserCourseProgress = await addToCoveredWordsResponse.json();
+                setUserCourseProgress(updatedUserCourseProgress);
             } catch(err){
                 setError(err instanceof Error ? err.message : "Error in handling correct user answer selection.");
             } finally{
