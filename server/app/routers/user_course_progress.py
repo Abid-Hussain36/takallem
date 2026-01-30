@@ -117,7 +117,7 @@ def clear_problem_counter(
     db: Session = Depends(get_db),
     service: UserCourseProgressService = Depends(get_user_course_progress_service)
 ) -> UserCourseProgressResponse:
-    """Sets the problem_counter to 1"""
+    """Sets the problem_counter to 0 (first problem)"""
     return service.clear_problem_counter(db, id)
 
 

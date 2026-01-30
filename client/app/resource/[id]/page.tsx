@@ -1,3 +1,5 @@
+'use client'
+
 import { useResource } from "@/context/ResourceContext";
 import { PolymorphicResource } from "@/types/response_models/ResourceResponse";
 import { useParams } from "next/navigation"

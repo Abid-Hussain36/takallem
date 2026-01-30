@@ -41,6 +41,7 @@ class UserCourseProgressService:
         """Creates a UserCourseProgress row for the user with the course and dialect"""
         user_id = createUserCourseProgressRequest.id
         course = createUserCourseProgressRequest.course
+        language = createUserCourseProgressRequest.language
         default_dialect = createUserCourseProgressRequest.default_dialect
         total_modules = createUserCourseProgressRequest.total_modules
 
@@ -59,6 +60,7 @@ class UserCourseProgressService:
         new_progress = UserCourseProgress(
             user_id=user_id,
             course_name=course,
+            language=language,
             dialect=None,
             default_dialect=default_dialect,
             total_modules=total_modules,
@@ -75,13 +77,11 @@ class UserCourseProgressService:
         return new_progress.to_model()
 
     def update_user_course_progress_dialect(self, db: Session, updateUserCourseProgressDialect: UpdateUserCourseProgressDialectRequest) -> UserCourseProgressResponse:
-        user_id = updateUserCourseProgressDialect.id
-        course = updateUserCourseProgressDialect.course
+        id = updateUserCourseProgressDialect.id
         dialect = updateUserCourseProgressDialect.dialect
 
         progress = db.query(UserCourseProgress).filter(
-            UserCourseProgress.user_id == user_id,
-            UserCourseProgress.course_name == course
+            UserCourseProgress.id == id
         ).first()
 
         if not progress:
@@ -141,7 +141,7 @@ class UserCourseProgressService:
         db.commit()
         db.refresh(progress)
         
-        return AddCoveredWordResponse(wordAdded)
+        return AddCoveredWordResponse(coveredWordAdded=wordAdded)
 
     def clear_covered_words(self, db: Session, id: int) -> UserCourseProgressResponse:
         """Clears the covered_words dictionary"""

@@ -92,7 +92,8 @@ const CourseSelection = () => {
       // 3. Creating a new UserCourseProgress for selected course
       const createUserCourseProgressRequest: CreateUserCourseProgressRequest = {
         id: user!.id, 
-        course: course.course_name, 
+        course: course.course_name,
+        language: course.language,
         default_dialect: course.default_dialect, 
         total_modules: course.total_modules
       };

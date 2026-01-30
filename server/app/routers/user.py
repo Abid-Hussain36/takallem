@@ -59,6 +59,16 @@ def delete_user(
     return service.delete_user_by_email(db, email)
 
 
+@user_router.put("/current-course/clear", response_model=UserResponse)
+def clear_current_course(
+    email: str = Depends(get_current_user_email),
+    db: Session = Depends(get_db),
+    service: UserService = Depends(get_user_service)
+) -> UserResponse:
+    """Clears the current course field for user"""
+    return service.clear_current_course(db, email)
+
+
 @user_router.put("/current-course/{course}", response_model=UserResponse)
 def update_current_course(
     course: AvailableCourse,
@@ -68,16 +78,6 @@ def update_current_course(
 ) -> UserResponse:
     """Updates the current course field for user"""
     return service.update_current_course(db, email, course)
-
-
-@user_router.put("/current-course/clear", response_model=UserResponse)
-def clear_current_course(
-    email: str = Depends(get_current_user_email),
-    db: Session = Depends(get_db),
-    service: UserService = Depends(get_user_service)
-) -> UserResponse:
-    """Clears the current course field for user"""
-    return service.clear_current_course(db, email)
 
 
 @user_router.put("/current-dialect/{dialect}", response_model=UserResponse)

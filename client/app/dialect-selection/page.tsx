@@ -38,14 +38,14 @@ const DialectSelection = () => {
     }
 
     const handleDialectSelection = async (dialect: DialectResponse) => {
-        if(userCourseProgress?.curr_module === resource.number){
+        if(userCourseProgress!.curr_module === resource.number){
             setIsLoading(true);
             const authToken = localStorage.getItem("token");
             
             try {
                 // 1. Increment progress
                 const incrementUserCourseProgress = await fetch(
-                    `${process.env.NEXT_PUBLIC_SERVER_URL}/user-course-progress/${userCourseProgress.id}`,
+                    `${process.env.NEXT_PUBLIC_SERVER_URL}/user-course-progress/curr_module/increment/${userCourseProgress!.id}`,
                     {
                         method: "PUT",
                         headers: {
@@ -59,8 +59,6 @@ const DialectSelection = () => {
                     const errorData = await incrementUserCourseProgress.json();
                     throw new Error(errorData.detail || "Failed to increment userCourseProgress")
                 }
-
-                const updatedProgress = await incrementUserCourseProgress.json();
 
                 // 2. Set user dialect
                 const setUserDialectResponse = await fetch(
@@ -84,8 +82,7 @@ const DialectSelection = () => {
 
                 // 3. Set userCourseProgress dialect
                 const setUserCourseProgressDialectRequest: UpdateUserCourseProgressDialectRequest = {
-                    id: userCourseProgress.id,
-                    course: userCourseProgress.course_name,
+                    id: userCourseProgress!.id,
                     dialect: dialect.dialect
                 }
 

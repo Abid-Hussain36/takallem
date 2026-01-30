@@ -3,7 +3,7 @@ from sqlalchemy import ForeignKey, Index, Integer, String, UniqueConstraint, Enu
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.db.database import Base
-from app.db.enums import AvailableCourse, AvailableDialect
+from app.db.enums import AvailableCourse, AvailableDialect, AvailableLanguage
 from app.models.db.user.user_course_progress_response import UserCourseProgressResponse
 
 
@@ -18,6 +18,7 @@ class UserCourseProgress(Base):
     )  # FK, Many Side
     
     course_name: Mapped[AvailableCourse] = mapped_column(Enum(AvailableCourse))
+    language: Mapped[AvailableLanguage] = mapped_column(Enum(AvailableLanguage))
     dialect: Mapped[AvailableDialect | None] = mapped_column(Enum(AvailableDialect))
     default_dialect: Mapped[AvailableDialect | None] = mapped_column(Enum(AvailableDialect))
     total_modules: Mapped[int] = mapped_column()
@@ -39,6 +40,7 @@ class UserCourseProgress(Base):
         return UserCourseProgressResponse(
             id=self.id,
             course_name=self.course_name,
+            language=self.language,
             dialect=self.dialect,
             default_dialect=self.default_dialect,
             total_modules=self.total_modules,

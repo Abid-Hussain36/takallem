@@ -1,11 +1,11 @@
 'use client'
 
 import { useResource } from "@/context/ResourceContext"
-import { VocabLectureResponse } from "@/types/response_models/ResourceResponse";
+import { VocabLectureResponse, VocabWordResponse } from "@/types/response_models/ResourceResponse";
 import styles from './VocabLecture.module.css';
 import { useRouter } from "next/navigation";
 import { useUserCourseProgress } from "@/context/UserCourseProgressContext";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef } from "react";
 
 
 const VocabLecture = () => {
@@ -16,6 +16,9 @@ const VocabLecture = () => {
 
     const [isLoading, setIsLoading] = useState<boolean>(false)
     const [error, setError] = useState<string>("")
+    const [playingWordId, setPlayingWordId] = useState<number | null>(null);
+    
+    const audioRef = useRef<HTMLAudioElement | null>(null);
 
     if (!resource || !resource.resource) {
         return <div className={styles.loading}>Loading vocabulary...</div>;
@@ -78,9 +81,24 @@ const VocabLecture = () => {
         router.replace("/")
     }
 
-    const handleWordClick = (wordId: number) => {
-        // TODO: Implement audio playback
-        console.log("Word clicked:", wordId);
+    const handleWordClick = (word: VocabWordResponse) => {
+        // Stop any currently playing audio
+        if (audioRef.current) {
+            audioRef.current.pause();
+            audioRef.current.currentTime = 0;
+        }
+        
+        // Set the audio source and play
+        if (audioRef.current && word.vocab_audio) {
+            audioRef.current.src = word.vocab_audio;
+            audioRef.current.play()
+                .then(() => setPlayingWordId(word.id))
+                .catch(err => setError("Failed to play audio"));
+        }
+    }
+
+    const handleAudioEnded = () => {
+        setPlayingWordId(null);
     }
 
     return(
@@ -118,6 +136,7 @@ const VocabLecture = () => {
                         </div>
                     ) : (
                         <div className={styles.tableWrapper}>
+                            <audio ref={audioRef} onEnded={handleAudioEnded} />
                             <table className={styles.vocabTable}>
                                 <thead>
                                     <tr>
@@ -131,13 +150,17 @@ const VocabLecture = () => {
                                             <td className={styles.meaningCell}>{word.meaning}</td>
                                             <td className={styles.arabicCell}>
                                                 <button 
-                                                    className={styles.arabicButton}
-                                                    onClick={() => handleWordClick(word.id)}
+                                                    className={`${styles.arabicButton} ${playingWordId === word.id ? styles.playing : ''}`}
+                                                    onClick={() => handleWordClick(word)}
                                                     aria-label={`Play audio for ${word.word}`}
                                                 >
                                                     {word.word}
                                                     <svg className={styles.audioIcon} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                                                        <path d="M10 3.75a2 2 0 10-4 0v8.5a2 2 0 104 0v-8.5zM17.25 8a.75.75 0 00-1.5 0v4a.75.75 0 001.5 0V8zM4.5 8a.75.75 0 00-1.5 0v4a.75.75 0 001.5 0V8z" />
+                                                        {playingWordId === word.id ? (
+                                                            <path d="M6 4h2v12H6V4zm6 0h2v12h-2V4z" />
+                                                        ) : (
+                                                            <path d="M10 3.75a2 2 0 10-4 0v8.5a2 2 0 104 0v-8.5zM17.25 8a.75.75 0 00-1.5 0v4a.75.75 0 001.5 0V8zM4.5 8a.75.75 0 00-1.5 0v4a.75.75 0 001.5 0V8z" />
+                                                        )}
                                                     </svg>
                                                 </button>
                                             </td>

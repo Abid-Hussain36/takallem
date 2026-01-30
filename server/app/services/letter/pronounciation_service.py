@@ -1,9 +1,11 @@
+from typing import Optional
 from app.models.letter.pronounciation import LetterPronounciationResponse, LetterPronounciationExplainInput, LetterPronounciationExplainResponse, LetterWordPronounciationExplainInput
 from fastapi import UploadFile
 from pydub import AudioSegment
-from app.utils.constants import PRONOUNCIATION_BASE_URL, MSA
+from app.utils.constants import PRONOUNCIATION_BASE_URL, AZURE_LANGUAGE_CODE
 from app.utils.prompts.pronounciation.check_word_pronounciation import build_check_word_pronounciation_messages
 from app.utils.openai import openai_client
+from app.db.enums import AvailableLanguage, AvailableDialect
 import os, httpx, io, base64, json
 from app.utils.prompts.pronounciation.check_letter_pronounciation import build_check_letter_pronounciation_messages
 from app.utils.prompts.pronounciation.explain_letter_pronounciation_messages import build_explain_letter_pronounciation_messages
@@ -11,10 +13,26 @@ from app.utils.prompts.pronounciation.explain_word_pronounciation import build_e
 
 
 class PronounciationService():
+    def _get_language_code(self, language: AvailableLanguage, dialect: AvailableDialect | None) -> str:
+        """Get the Azure language code based on language and optional dialect."""
+        language_mapping = AZURE_LANGUAGE_CODE.get(language)
+        
+        if language_mapping is None:
+            raise ValueError(f"Unsupported language: {language}")
+        
+        # If the mapping is a dict (has dialects), get the dialect-specific code
+        if isinstance(language_mapping, dict):
+            if dialect and dialect in language_mapping:
+                return language_mapping[dialect]
+        
+        return language_mapping
+
     async def check_letter_pronounciation(
         self,
         user_audio: UploadFile,
-        letter: str
+        letter: str,
+        language: AvailableLanguage,
+        dialect: AvailableDialect | None = None
     ) -> LetterPronounciationResponse:
         """Takes in the user audio and letter to be pronounced and evaluates the performance."""
         # Gets the bytes of the audio file
@@ -50,7 +68,9 @@ class PronounciationService():
             "Content-type": "audio/wav; codecs=audio/pcm; samplerate=16000",
         }
 
-        azure_speech_url = f"{PRONOUNCIATION_BASE_URL}?language={MSA}&format=detailed"
+        # Get the appropriate language code based on user's language and dialect
+        language_code = self._get_language_code(language, dialect)
+        azure_speech_url = f"{PRONOUNCIATION_BASE_URL}?language={language_code}&format=detailed"
         
         # Scores the user's pronounciation of the letter
         try:
@@ -107,7 +127,7 @@ class PronounciationService():
 
         # Generates feedback for the student based on the scores
         chat_response = await openai_client.chat.completions.create(
-            model=os.getenv("LETTER_PRONOUNCIATION_MODEL") or "gpt-5.2-chat-latest",
+            model=os.getenv("PRIMARY_MODEL") or "gpt-5.2-chat-latest",
             messages=pronounciation_messages,
             response_format={"type": "json_object"},
         )
@@ -143,7 +163,9 @@ class PronounciationService():
     async def check_word_pronounciation(
         self,
         user_audio: UploadFile,
-        word: str
+        word: str,
+        language: AvailableLanguage,
+        dialect: AvailableDialect | None = None
     ) -> LetterPronounciationResponse:
         # Gets the bytes of the audio file
         raw_bytes = await user_audio.read()
@@ -178,7 +200,9 @@ class PronounciationService():
             "Content-type": "audio/wav; codecs=audio/pcm; samplerate=16000",
         }
 
-        azure_speech_url = f"{PRONOUNCIATION_BASE_URL}?language={MSA}&format=detailed"
+        # Get the appropriate language code based on user's language and dialect
+        language_code = self._get_language_code(language, dialect)
+        azure_speech_url = f"{PRONOUNCIATION_BASE_URL}?language={language_code}&format=detailed"
         
         # Scores the user's pronounciation of the word
         try:
@@ -240,7 +264,7 @@ class PronounciationService():
 
         # Generates feedback for the student based on the scores
         chat_response = await openai_client.chat.completions.create(
-            model=os.getenv("LETTER_PRONOUNCIATION_MODEL") or "gpt-5.1-chat-latest",
+            model=os.getenv("PRIMARY_MODEL") or "gpt-5.1-chat-latest",
             messages=pronounciation_messages,
             response_format={"type": "json_object"},
         )
@@ -286,7 +310,7 @@ class PronounciationService():
         explain_messages = build_explain_letter_pronounciation_messages(query, letter, status, transcription, previous_feedback, mistake_tags_string, performance_reflection)
 
         chat_response = await openai_client.chat.completions.create(
-            model=os.getenv("LETTER_PRONOUNCIATION_MODEL") or "gpt-5.2-chat-latest",
+            model=os.getenv("PRIMARY_MODEL") or "gpt-5.2-chat-latest",
             messages=explain_messages,
             response_format={"type": "json_object"},
         )
@@ -320,7 +344,7 @@ class PronounciationService():
         explain_messages = build_explain_word_pronounciation_messages(query, word, status, transcription, previous_feedback, mistake_tags_string, performance_reflection)
 
         chat_response = await openai_client.chat.completions.create(
-            model=os.getenv("LETTER_PRONOUNCIATION_MODEL") or "gpt-5.2-chat-latest",
+            model=os.getenv("PRIMARY_MODEL") or "gpt-5.2-chat-latest",
             messages=explain_messages,
             response_format={"type": "json_object"},
         )

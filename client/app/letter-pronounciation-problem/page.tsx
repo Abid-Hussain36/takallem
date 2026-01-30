@@ -114,6 +114,10 @@ const LetterPronounciationProblem = () => {
         const formData = new FormData();
         formData.append('user_audio', audioBlob, 'user_audio.webm');
         formData.append('letter', problem.letter);
+        formData.append('language', userCourseProgress!.language);
+        if (userCourseProgress!.dialect) {
+            formData.append('dialect', userCourseProgress!.dialect);
+        }
         
         const authToken = localStorage.getItem('token');
 

@@ -20,7 +20,10 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string>("");
   const [token, setToken] = useState<string | null>(null);
+
   const router = useRouter();
+
+  const currDialect = userCourseProgress?.dialect;
 
   const handleSignout = () => {
     localStorage.removeItem("token");
@@ -56,7 +59,7 @@ export default function Home() {
       }
 
       const course = user!.current_course;
-      const dialect = user!.current_dialect;
+      const dialect = userCourseProgress?.dialect;
 
       // Get token from localStorage
       const authToken = localStorage.getItem("token");
@@ -122,10 +125,11 @@ export default function Home() {
       }
     }
     
-    if(!modules || modules.length === 0){
+    // Fetch modules whenever user, userCourseProgress, or dialect changes
+    if(user && userCourseProgress){
       getModules();
     }
-  }, [])
+  }, [user, userCourseProgress, currDialect])
 
   const handleBadState = () => {
     localStorage.removeItem("token");

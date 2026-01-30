@@ -1,8 +1,12 @@
-from typing import List
+from typing import List, TYPE_CHECKING
 from sqlalchemy import ForeignKey, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.db.database import Base
 from app.models.db.problem.letter_writing_problem_response import LetterWritingProblemResponse
+
+if TYPE_CHECKING:
+    from app.db.schemas.letter_writing_problem_set import LetterWritingProblemSet
+    from app.db.schemas.letter_writing_sequence import LetterWritingSequence
 
 
 class LetterWritingProblem(Base):

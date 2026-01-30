@@ -1,4 +1,4 @@
-from typing import Union, List
+from typing import Union, List, Optional
 from fastapi import APIRouter, UploadFile, File, Form, Depends
 from app.models.letter.pronounciation import LetterPronounciationExplainInput, LetterPronounciationResponse, LetterWordPronounciationExplainInput, LetterPronounciationExplainResponse
 from app.services.letter.pronounciation_service import PronounciationService
@@ -6,6 +6,7 @@ from app.utils.di import get_pronounciation_service, get_writing_service
 from app.models.letter.writing import DictationResponse, LetterJoiningResponse, LetterWritingResponse, WritingPhotoRetakeResponse
 from app.services.letter.writing_service import LetterWritingService
 from app.utils.enums import LetterPosition
+from app.db.enums import AvailableLanguage, AvailableDialect
 
 
 letter_router = APIRouter()
@@ -15,22 +16,26 @@ letter_router = APIRouter()
 async def check_letter_pronounciation(
     user_audio: UploadFile = File(...),
     letter: str = Form(...),
+    language: AvailableLanguage = Form(...),
+    dialect: Optional[AvailableDialect] = Form(None),
     service: PronounciationService = Depends(get_pronounciation_service)
 ):
-    return await service.check_letter_pronounciation(user_audio, letter)
+    return await service.check_letter_pronounciation(user_audio, letter, language, dialect)
 
 
 @letter_router.post("/pronounciation/word/check", response_model=LetterPronounciationResponse)
 async def check_word_pronounciation(
     user_audio: UploadFile = File(...),
     word: str = Form(...),
+    language: AvailableLanguage = Form(...),
+    dialect: Optional[AvailableDialect] = Form(None),
     service: PronounciationService = Depends(get_pronounciation_service)
 ):
     """
         Takes in a user's recording of pronouncing a particular word and the word itself 
         and returns feedback on the user's attempt.
     """
-    return await service.check_word_pronounciation(user_audio, word)
+    return await service.check_word_pronounciation(user_audio, word, language, dialect)
 
 
 @letter_router.post("/pronounciation/letter/explain", response_model=LetterPronounciationExplainResponse)

@@ -17,8 +17,56 @@ from app.db.schemas.module import Module
 from app.db.schemas.user import User
 from app.db.schemas.user_course_progress import UserCourseProgress
 
+# Import dependent schemas first (those that other schemas reference)
+from app.db.schemas.letter_writing_sequence import LetterWritingSequence
+from app.db.schemas.vocab_word import VocabWord
+
+# Import all resource subclasses
+from app.db.schemas.info_lecture import InfoLecture
+from app.db.schemas.letter_speaking_lecture import LetterSpeakingLecture
+from app.db.schemas.letter_writing_lecture import LetterWritingLecture
+from app.db.schemas.vocab_lecture import VocabLecture
+
+# Problem sets and problems (import problems before problem sets)
+from app.db.schemas.letter_pronounciation_problem import LetterPronounciationProblem
+from app.db.schemas.word_pronounciation_problem import WordPronounciationProblem
+from app.db.schemas.word_pronounciation_problem_set import WordPronounciationProblemSet
+from app.db.schemas.letter_recognition_problem import LetterRecognitionProblem
+from app.db.schemas.letter_recognition_problem_set import LetterRecognitionProblemSet
+from app.db.schemas.letter_writing_problem import LetterWritingProblem
+from app.db.schemas.letter_writing_problem_set import LetterWritingProblemSet
+from app.db.schemas.letter_joining_problem import LetterJoiningProblem
+from app.db.schemas.letter_joining_problem_set import LetterJoiningProblemSet
+from app.db.schemas.dictation_problem import DictationProblem
+from app.db.schemas.dictation_problem_set import DictationProblemSet
+from app.db.schemas.discrimination_problem import DiscriminationProblem
+from app.db.schemas.discrimination_problem_set import DiscriminationProblemSet
+
+# Vocab problem sets (import in dependency order: problems -> sets -> collections)
+from app.db.schemas.vocab_speaking_problem_word import vocab_speaking_problem_word
+from app.db.schemas.vocab_reading_problem import VocabReadingProblem
+from app.db.schemas.vocab_listening_problem import VocabListeningProblem
+from app.db.schemas.vocab_speaking_problem import VocabSpeakingProblem
+from app.db.schemas.vocab_reading_problem_set import VocabReadingProblemSet
+from app.db.schemas.vocab_listening_problem_set import VocabListeningProblemSet
+from app.db.schemas.vocab_speaking_problem_set import VocabSpeakingProblemSet
+from app.db.schemas.vocab_reading_problem_sets import VocabReadingProblemSets
+from app.db.schemas.vocab_listening_problem_sets import VocabListeningProblemSets
+from app.db.schemas.vocab_speaking_problem_sets import VocabSpeakingProblemSets
+
+# Reading comprehension (import text first, then problems, then problem sets)
+from app.db.schemas.reading_comprehension_text import ReadingComprehensionText
+from app.db.schemas.reading_comprehension_mcq_problem import ReadingComprehensionMCQProblem
+from app.db.schemas.reading_comprehension_mcq_problem_set import ReadingComprehensionMCQProblemSet
+from app.db.schemas.reading_comprehension_writing_problem import ReadingComprehensionWritingProblem
+from app.db.schemas.reading_comprehension_writing_problem_set import ReadingComprehensionWritingProblemSet
+
+# Dialect selection
+from app.db.schemas.dialect_selection import DialectSelection
+from app.db.schemas.dialect_selection_dialects import dialect_selection_dialects
+
 from app.routers.letter import letter_router
-from app.routers.vocab import vocab_router
+from app.routers.voice_tutor import voice_tutor_router
 from app.routers.auth import auth_router
 from app.routers.user import user_router
 from app.routers.user_course_progress import user_course_progress_router
@@ -46,7 +94,7 @@ app.add_middleware(
 
 # Makes all the routes from the routers available.
 app.include_router(letter_router, prefix="/letter")
-app.include_router(vocab_router, prefix="/vocab")
+app.include_router(voice_tutor_router, prefix="/voice-tutor")
 app.include_router(auth_router, prefix="/auth")
 app.include_router(user_router, prefix="/user")
 app.include_router(user_course_progress_router, prefix="/user-course-progress")

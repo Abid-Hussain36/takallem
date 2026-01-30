@@ -245,7 +245,7 @@ const DictationProblemSet = () => {
             try {
                 // Reset problem counter
                 const resetCounterResponse = await fetch(
-                    `${process.env.NEXT_PUBLIC_SERVER_URL}/user-course-progress/problem_counter/reset/${userCourseProgress!.id}`,
+                    `${process.env.NEXT_PUBLIC_SERVER_URL}/user-course-progress/problem_counter/clear/${userCourseProgress!.id}`,
                     {
                         method: "PUT",
                         headers: {

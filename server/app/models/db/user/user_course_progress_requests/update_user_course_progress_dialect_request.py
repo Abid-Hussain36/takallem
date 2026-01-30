@@ -4,5 +4,4 @@ from app.db.enums import AvailableCourse, AvailableDialect
 
 class UpdateUserCourseProgressDialectRequest(BaseModel):
     id: int
-    course: AvailableCourse
     dialect: AvailableDialect

@@ -1,3 +1,5 @@
+'use client'
+
 import { createContext, useContext, useState, ReactNode } from "react";
 import { UserCourseProgressResponse } from "@/types/response_models/UserCourseProgressResponse";
 

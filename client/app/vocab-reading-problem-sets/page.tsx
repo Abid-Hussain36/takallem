@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import IncrementCurrentVocabProblemSetRequest from "@/types/request_models/IncrementCurrentVocabProblemSetRequest";
 import styles from './VocabReadingProblemSets.module.css';
+import { UserCourseProgressResponse } from "@/types/response_models/UserCourseProgressResponse";
 
 type ProgressStatus = 'unanswered' | 'current' | 'correct' | 'incorrect';
 
@@ -37,7 +38,7 @@ const VocabReadingProblemSets = () => {
     const problemCounter: number = userCourseProgress!.problem_counter;
     
     // VocabReadingSets Data
-    const vocabReadingProblemSetsData = resource.resource as VocabReadingProblemSetsResponse;
+    const vocabReadingProblemSetsData: VocabReadingProblemSetsResponse = resource.resource as VocabReadingProblemSetsResponse;
     const problemSetLimit = vocabReadingProblemSetsData.set_limit;
     const vocabReadingProblemSetData = vocabReadingProblemSetsData.problem_sets[currVPS - 1];
     const problems = vocabReadingProblemSetData.problems;
@@ -266,8 +267,13 @@ const VocabReadingProblemSets = () => {
                     throw new Error(errorData.detail || "Error in incrementing vocab problem set number.")
                 }
 
-                const updatedUserCourseProgress = await incrementCurrentVocabProblemSetResponse.json();
-                
+                const updatedUserCourseProgress: UserCourseProgressResponse = await incrementCurrentVocabProblemSetResponse.json() as UserCourseProgressResponse;
+
+                const problemSetIdx = updatedUserCourseProgress.current_vocab_problem_set
+                const problemsCount = vocabReadingProblemSetsData.problem_sets[problemSetIdx].problem_count
+                const newStatus = Array(problemsCount).fill("unanswered") as ProgressStatus[];
+
+                setProgressStatus(newStatus);
                 setUserCourseProgress(updatedUserCourseProgress);
                 setCurrProblemIdx(0);
                 setAnswered(false);

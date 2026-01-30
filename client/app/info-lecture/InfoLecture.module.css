@@ -157,7 +157,34 @@
     padding: 1.5rem 2rem;
     border-top: 1px solid #e5e7eb;
     display: flex;
-    justify-content: flex-end;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.homeButton {
+    background: rgba(107, 114, 128, 0.1);
+    color: #4b5563;
+    border: 2px solid #d1d5db;
+    padding: 0.875rem 2rem;
+    border-radius: 0.5rem;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: all 0.3s ease;
+}
+
+.homeButton:hover {
+    background: rgba(107, 114, 128, 0.2);
+    border-color: #9ca3af;
+    transform: translateY(-2px);
+}
+
+.homeButton svg {
+    width: 1.25rem;
+    height: 1.25rem;
 }
 
 .continueButton {
@@ -179,6 +206,12 @@
 .continueButton:hover {
     transform: translateY(-2px);
     box-shadow: 0 6px 12px rgba(102, 126, 234, 0.5);
+}
+
+.continueButton:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+    transform: none;
 }
 
 .continueButton svg {

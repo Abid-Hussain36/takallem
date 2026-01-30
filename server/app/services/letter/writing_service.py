@@ -39,7 +39,7 @@ class LetterWritingService:
         qa_messages = build_letter_writing_qa_messages(user_image_url)
 
         qa_chat_response = await openai_client.chat.completions.create(
-            model=os.getenv("LETTER_PRONOUNCIATION_MODEL") or "gpt-5.2-chat-latest",
+            model=os.getenv("PRIMARY_MODEL") or "gpt-5.2-chat-latest",
             messages=qa_messages,
             response_format={"type": "json_object"},
         )
@@ -71,7 +71,7 @@ class LetterWritingService:
         writing_eval_messages = build_letter_writing_messages(user_image_url, target_image_url, letter, position.value)
 
         writing_eval_chat_response = await openai_client.chat.completions.create(
-            model=os.getenv("LETTER_PRONOUNCIATION_MODEL") or "gpt-5.2-chat-latest",
+            model=os.getenv("PRIMARY_MODEL") or "gpt-5.2-chat-latest",
             messages=writing_eval_messages,
             response_format={"type": "json_object"}
         )
@@ -147,7 +147,7 @@ class LetterWritingService:
         qa_messages = build_letter_writing_qa_messages(user_image_url)
 
         qa_chat_response = await openai_client.chat.completions.create(
-            model=os.getenv("LETTER_PRONOUNCIATION_MODEL") or "gpt-5.2-chat-latest",
+            model=os.getenv("PRIMARY_MODEL") or "gpt-5.2-chat-latest",
             messages=qa_messages,
             response_format={"type": "json_object"}
         )
@@ -179,7 +179,7 @@ class LetterWritingService:
         joining_messages = build_letter_joining_messages(user_image_url, letter_list, target_word)
 
         joining_chat_response = await openai_client.chat.completions.create(
-            model=os.getenv("LETTER_PRONOUNCIATION_MODEL") or "gpt-5.2-chat-latest",
+            model=os.getenv("PRIMARY_MODEL") or "gpt-5.2-chat-latest",
             messages=joining_messages,
             response_format={"type": "json_object"}
         )
@@ -259,7 +259,7 @@ class LetterWritingService:
         qa_messages = build_letter_writing_qa_messages(user_image_url)
 
         qa_chat_response = await openai_client.chat.completions.create(
-            model=os.getenv("LETTER_PRONOUNCIATION_MODEL") or "gpt-5.2-chat-latest",
+            model=os.getenv("PRIMARY_MODEL") or "gpt-5.2-chat-latest",
             messages=qa_messages,
             response_format={"type": "json_object"}
         )
@@ -291,7 +291,7 @@ class LetterWritingService:
         dictation_messages = build_letter_dictation_messages(user_image_url, target_word)
 
         dictation_chat_response = await openai_client.chat.completions.create(
-            model=os.getenv("LETTER_PRONOUNCIATION_MODEL") or "gpt-5.2-chat-latest",
+            model=os.getenv("PRIMARY_MODEL") or "gpt-5.2-chat-latest",
             messages=dictation_messages,
             response_format={"type": "json_object"}
         )

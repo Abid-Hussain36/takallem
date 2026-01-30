@@ -1,3 +1,5 @@
+'use client'
+
 import { CachedResource } from "@/types/response_models/ResourceResponse";
 import { createContext, useContext, useState, ReactNode } from "react";
 

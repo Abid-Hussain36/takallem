@@ -1,6 +1,27 @@
 # API URLS
+import os
+from typing import Dict
+from dotenv import load_dotenv
+from app.db.enums import AvailableDialect, AvailableLanguage
+
+
+# Env Variables
+load_dotenv()
+VOICE_ID = os.getenv("ELEVEN_LABS_VOICE_ID")
+
+
+#API URLs
 PRONOUNCIATION_BASE_URL = "https://eastus.stt.speech.microsoft.com/speech/recognition/conversation/cognitiveservices/v1"
-    
-# Arabic Types (Temp)
-MSA = "ar-SA"
-LEVANTINE = "ar-SY"
+TTS_BASE_URL = f"https://api.elevenlabs.io/v1/text-to-speech/{VOICE_ID}"
+
+
+# Resource Maps    
+AZURE_LANGUAGE_CODE: Dict[AvailableLanguage, Dict[AvailableDialect, str] | str] = {
+    AvailableLanguage.ARABIC: {
+        AvailableDialect.MSA: "ar-SA",
+        AvailableDialect.LEVANTINE: "ar-SY",
+        AvailableDialect.EGYPTIAN: "ar-EG"
+    },
+    AvailableLanguage.FRENCH: "fr-FR",
+    AvailableLanguage.SPANISH: "es-MX"
+}
