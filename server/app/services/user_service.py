@@ -14,7 +14,7 @@ from app.models.db.user.update_user_request import UpdateUserRequest
 
 class UserService:
     def create_user(self, db: Session, user_data: SignupRequest) -> UserResponse:
-        """Creates a user based on the passed in signup data and authentication id. Used for Signup."""
+        """Creates a user based on the passed in signup data. Used for Signup."""
         new_user = User(
             email=user_data.email,
             username=user_data.username,
@@ -35,7 +35,11 @@ class UserService:
             return new_user.to_model()
         except IntegrityError as e:
             db.rollback() # Undo any changes we made if we have an error like user already existing
-            raise ValueError("User with this email or username already exists")
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="User with this email or username already exists"
+            )
+
 
     def get_user_by_email(self, db: Session, email: str) -> UserResponse | None:
         """Gets the user by email address. Used for Login."""
@@ -43,6 +47,19 @@ class UserService:
         if user:
             return user.to_model() # The lazy load is triggered for progresses cause we access the relational field.
         return None
+
+
+    def get_authed_user(self, db: Session, email: str) -> UserResponse:
+        user = db.query(User).filter(User.email == email).first()
+
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="User not found"
+            )
+
+        return user.to_model()
+
 
     def update_user_profile(
         self, 
@@ -75,6 +92,7 @@ class UserService:
         
         return user.to_model()
 
+
     def delete_user_by_email(self, db: Session, email: str) -> SuccessMessage:
         """Deletes a user by their email"""
         user = db.query(User).filter(User.email == email).first()
@@ -89,6 +107,7 @@ class UserService:
         db.commit()
     
         return SuccessMessage(message=f"User with email {email} successfully deleted")
+
 
     def update_current_course(self, db: Session, email: str, course: AvailableCourse) -> UserResponse:
         """Updates the current course for a user"""
@@ -106,6 +125,7 @@ class UserService:
         
         return user.to_model()
 
+
     def clear_current_course(self, db: Session, email: str):
         """Clears the current user course"""
         user = db.query(User).filter(User.email == email).first()
@@ -114,6 +134,7 @@ class UserService:
         db.refresh(user)
 
         return user.to_model()
+
 
     def update_current_dialect(self, db: Session, email: str, dialect: AvailableDialect) -> UserResponse:
         """Updates the current dialect for a user"""
@@ -130,6 +151,24 @@ class UserService:
         db.refresh(user)
         
         return user.to_model()
+
+
+    def clear_current_dialect(self, db: Session, email: str) -> UserResponse:
+        """Clears the current dialect for a user"""
+        user = db.query(User).filter(User.email == email).first()
+
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="User not found"
+            )
+
+        user.current_dialect = None
+        db.commit()
+        db.refresh(user)
+
+        return user.to_model()
+
 
     def add_language_learning(self, db: Session, email: str, language: AvailableLanguage) -> UserResponse:
         """Adds a language to the user's language-learning list"""
@@ -153,6 +192,7 @@ class UserService:
         
         return user.to_model()
 
+
     def remove_language_learning(self, db: Session, email: str, language: AvailableLanguage) -> UserResponse:
         """Removes a language from the user's language-learning list"""
         user = db.query(User).filter(User.email == email).first()
@@ -175,7 +215,8 @@ class UserService:
         
         return user.to_model()
 
-    def add_language_learned(self, db: Session, email: str, language: str) -> UserResponse:
+
+    def add_language_learned(self, db: Session, email: str, language: AvailableLanguage) -> UserResponse:
         """Adds a language to the user's language-learned list"""
         user = db.query(User).filter(User.email == email).first()
         
@@ -196,7 +237,31 @@ class UserService:
         db.refresh(user)
         
         return user.to_model()
+
+
+    def remove_language_learned(self, db: Session, email: str, language: AvailableLanguage) -> UserResponse:
+        """Removes a language from the user's language-learned list"""
+        user = db.query(User).filter(User.email == email).first()
+        
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="User not found"
+            )
+        
+        if not user.languages_learned or language not in user.languages_learned:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Language not in learned list"
+            )
+        
+        user.languages_learned.remove(language)
+        db.commit()
+        db.refresh(user)
+        
+        return user.to_model()
     
+
     def add_course_completed(self, db: Session, email: str, course: AvailableCourse) -> UserResponse:
         """Adds a course to the user's courses-completed list"""
         user = db.query(User).filter(User.email == email).first()
@@ -219,6 +284,7 @@ class UserService:
         
         return user.to_model()
 
+
     def remove_course_completed(self, db: Session, email: str, course: AvailableCourse) -> UserResponse:
         """Removes a course from the user's courses-completed list"""
         user = db.query(User).filter(User.email == email).first()
@@ -236,28 +302,6 @@ class UserService:
             )
         
         user.courses_completed.remove(course)
-        db.commit()
-        db.refresh(user)
-        
-        return user.to_model()
-    
-    def remove_language_learned(self, db: Session, email: str, language: str) -> UserResponse:
-        """Removes a language from the user's language-learned list"""
-        user = db.query(User).filter(User.email == email).first()
-        
-        if not user:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="User not found"
-            )
-        
-        if not user.languages_learned or language not in user.languages_learned:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Language not in learned list"
-            )
-        
-        user.languages_learned.remove(language)
         db.commit()
         db.refresh(user)
         

@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useState, useEffect, useRef } from "react";
 import IncrementCurrentVocabProblemSetRequest from "@/types/request_models/IncrementCurrentVocabProblemSetRequest";
 import styles from './VocabListeningProblemSets.module.css';
+import { UserCourseProgressResponse } from "@/types/response_models/UserCourseProgressResponse";
 
 type ProgressStatus = 'unanswered' | 'current' | 'correct' | 'incorrect';
 
@@ -26,7 +27,7 @@ const VocabListeningProblemSets = () => {
 
     const audioRef = useRef<HTMLAudioElement | null>(null);
 
-    if (!resource || !resource.resource) {
+    if (!resource || !resource.resource || !userCourseProgress) {
         return (
             <div className={styles.loading}>
                 <div className={styles.spinner}></div>
@@ -36,13 +37,35 @@ const VocabListeningProblemSets = () => {
     }
 
     // UserCourseProgress Fields
-    const currVPS: number = userCourseProgress!.current_vocab_problem_set;
-    const problemCounter: number = userCourseProgress!.problem_counter;
+    // Safety: Ensure currVPS is at least 1 (fix for corrupted DB entries with 0)
+    const currVPS: number = Math.max(1, userCourseProgress.current_vocab_problem_set);
+    const problemCounter: number = userCourseProgress.problem_counter;
     
     // VocabListeningSets Data
     const vocabListeningProblemSetsData = resource.resource as VocabListeningProblemSetsResponse;
     const problemSetLimit = vocabListeningProblemSetsData.set_limit;
+    
+    // Debug logging
+    console.log("Current vocab problem set index:", currVPS);
+    console.log("Total problem sets available:", vocabListeningProblemSetsData.problem_sets.length);
+    console.log("All problem sets:", vocabListeningProblemSetsData.problem_sets);
+    console.log("Trying to access index:", currVPS - 1);
+    
     const vocabListeningProblemSetData = vocabListeningProblemSetsData.problem_sets[currVPS - 1];
+    
+    // Safety check: ensure the problem set exists
+    if (!vocabListeningProblemSetData || !vocabListeningProblemSetData.problems || vocabListeningProblemSetData.problems.length === 0) {
+        return (
+            <div className={styles.loading}>
+                <div className={styles.spinner}></div>
+                <p className={styles.loadingText}>
+                    No problems available for this set...<br/>
+                    Debug: currVPS={currVPS}, total sets={vocabListeningProblemSetsData.problem_sets.length}
+                </p>
+            </div>
+        );
+    }
+    
     const problems = vocabListeningProblemSetData.problems;
     const problem = problems[currProblemIdx];
     const answerChoices: string[] = problem.answer_choices;
@@ -51,7 +74,12 @@ const VocabListeningProblemSets = () => {
     
     // Stopping Variables
     const vocabListeningProblemSetLength = vocabListeningProblemSetData.problem_count;
-    const problemCounterStop = vocabListeningProblemSetLength * 2;
+    const problemCounterStop = vocabListeningProblemSetLength;  // Fixed: not * 2
+
+    console.log("Problem count:", vocabListeningProblemSetLength);
+    console.log("Current problem counter:", problemCounter);
+    console.log("Problem counter stop (target):", problemCounterStop);
+    console.log("Exercise complete:", problemCounter === problemCounterStop);
 
     // End Booleans
     const atSetEnd = currProblemIdx === problems.length - 1;
@@ -78,20 +106,21 @@ const VocabListeningProblemSets = () => {
         }
     }, [currProblemIdx, answered]);
 
-    // Handle audio playback
+    // Handle audio playback - simple play button (no pause toggle)
     const handlePlayAudio = () => {
         if (audioRef.current) {
-            if (isPlaying) {
-                audioRef.current.pause();
-                setIsPlaying(false);
-            } else {
-                audioRef.current.play();
-                setIsPlaying(true);
-            }
+            // Stop any currently playing audio and restart
+            audioRef.current.pause();
+            audioRef.current.currentTime = 0;
+            
+            // Play the audio
+            audioRef.current.play()
+                .then(() => setIsPlaying(true))
+                .catch(err => console.error("Failed to play audio:", err));
         }
     };
 
-    // Audio event listeners
+    // Audio event listener for when audio ends
     useEffect(() => {
         const audio = audioRef.current;
         if (!audio) return;
@@ -100,22 +129,10 @@ const VocabListeningProblemSets = () => {
             setIsPlaying(false);
         };
 
-        const handleAudioPlay = () => {
-            setIsPlaying(true);
-        };
-
-        const handleAudioPause = () => {
-            setIsPlaying(false);
-        };
-
         audio.addEventListener('ended', handleAudioEnd);
-        audio.addEventListener('play', handleAudioPlay);
-        audio.addEventListener('pause', handleAudioPause);
 
         return () => {
             audio.removeEventListener('ended', handleAudioEnd);
-            audio.removeEventListener('play', handleAudioPlay);
-            audio.removeEventListener('pause', handleAudioPause);
         };
     }, [audioRef.current]);
 
@@ -155,6 +172,9 @@ const VocabListeningProblemSets = () => {
                     word: choice
                 }
                 
+                console.log("Adding word to covered_words:", choice);
+                console.log("Request payload:", addToCoveredWordsRequest);
+                
                 const addToCoveredWordsResponse = await fetch(
                     `${process.env.NEXT_PUBLIC_SERVER_URL}/user-course-progress/covered_words`,
                     {
@@ -167,13 +187,19 @@ const VocabListeningProblemSets = () => {
                     }
                 )
 
+                console.log("Response status:", addToCoveredWordsResponse.status);
+
                 if(!addToCoveredWordsResponse.ok){
                     const errorData = await addToCoveredWordsResponse.json();
+                    console.error("Error response:", errorData);
                     throw new Error(errorData.detail || "Failed to add to covered words")
                 }
 
                 // Backend now returns full updated UserCourseProgress (including covered_words and problem_counter)
                 const updatedUserCourseProgress = await addToCoveredWordsResponse.json();
+                console.log("Updated progress:", updatedUserCourseProgress);
+                console.log("Covered words:", updatedUserCourseProgress.covered_words);
+                console.log("Problem counter:", updatedUserCourseProgress.problem_counter);
                 setUserCourseProgress(updatedUserCourseProgress);
             } catch(err){
                 setError(err instanceof Error ? err.message : "Error in handling correct user answer selection.");
@@ -184,6 +210,14 @@ const VocabListeningProblemSets = () => {
     }
 
     const handleNext = async () => {
+        console.log("=== handleNext called ===");
+        console.log("atSetEnd:", atSetEnd);
+        console.log("exerciseComplete:", exerciseComplete);
+        console.log("problemCounter:", problemCounter);
+        console.log("problemCounterStop:", problemCounterStop);
+        console.log("currProblemIdx:", currProblemIdx);
+        console.log("problems.length:", problems.length);
+        
         if(atSetEnd && exerciseComplete){
             setIsLoading(true);
             const authToken = localStorage.getItem("token");
@@ -301,8 +335,13 @@ const VocabListeningProblemSets = () => {
                     throw new Error(errorData.detail || "Error in incrementing vocab problem set number.")
                 }
 
-                const updatedUserCourseProgress = await incrementCurrentVocabProblemSetResponse.json();
-                
+                const updatedUserCourseProgress: UserCourseProgressResponse = await incrementCurrentVocabProblemSetResponse.json() as UserCourseProgressResponse;
+
+                const problemSetIdx = updatedUserCourseProgress.current_vocab_problem_set - 1; // Convert to 0-based index
+                const problemsCount = vocabListeningProblemSetsData.problem_sets[problemSetIdx].problem_count
+                const newStatus = Array(problemsCount).fill("unanswered") as ProgressStatus[];
+
+                setProgressStatus(newStatus);
                 setUserCourseProgress(updatedUserCourseProgress);
                 setCurrProblemIdx(0);
                 setAnswered(false);

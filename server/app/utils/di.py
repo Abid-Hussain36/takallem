@@ -3,10 +3,10 @@ from app.services.user_service import UserService
 from app.services.user_course_progress_service import UserCourseProgressService
 from app.services.module_service import ModuleService
 from app.services.language_service import LanguageService
-from app.services.letter.pronounciation_service import PronounciationService
-from app.services.letter.writing_service import LetterWritingService
 from app.services.resource_service import ResourceService
-from app.services.voice_tutor_service import VoiceTutorService
+from app.services.pronounciation_service import PronounciationService
+from app.services.writing_service import WritingService
+from server.app.services.speaking_service import SpeakingService
 
 
 # Defines functions we use to build the objects for injection.
@@ -18,12 +18,12 @@ def get_pronounciation_service() -> PronounciationService:
     return PronounciationService()
 
 
-def get_writing_service() -> LetterWritingService:
-    return LetterWritingService()
+def get_writing_service() -> WritingService:
+    return WritingService()
 
 
-def get_voice_tutor_service() -> VoiceTutorService:
-    return VoiceTutorService()
+def get_speaking_service() -> SpeakingService:
+    return SpeakingService()
 
 
 def get_user_service() -> UserService:

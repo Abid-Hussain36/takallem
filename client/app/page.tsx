@@ -10,6 +10,7 @@ import CourseProgress from "@/components/CourseProgress";
 import ModuleList from "@/components/ModuleList";
 import { ModuleResponse } from "@/types/response_models/ModuleResponse";
 import { useResource } from "@/context/ResourceContext";
+import { CachedResource } from "@/types/response_models/ResourceResponse";
 
 export default function Home() {
   const { user, setUser } = useUser();
@@ -35,14 +36,16 @@ export default function Home() {
   }
 
   const handleModuleClick = (module: ModuleResponse) => {
-    setResource({
+    const resource: CachedResource = {
       course: module.course,
       unit: module.unit,
       section: module.section,
       title: module.title,
       number: module.number,
       resource: null
-    })
+    }
+    
+    setResource(resource)
     router.push(`/resource/${module.resource_id}`);
   }
 

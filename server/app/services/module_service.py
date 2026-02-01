@@ -9,9 +9,7 @@ from app.db.enums import AvailableCourse, AvailableDialect
 
 class ModuleService:
     def get_modules_by_course(self, db: Session, course: AvailableCourse) -> List[ModuleResponse]:
-        """
-        Gets all modules for a specified course, sorted by number
-        """
+        """Gets all modules for a specified course, sorted by number"""
         modules = db.query(Module).filter(
             Module.course == course,
             Module.dialect.is_(None)
@@ -21,9 +19,7 @@ class ModuleService:
 
 
     def get_modules_by_course_and_dialect(self, db: Session, course: AvailableCourse, dialect: AvailableDialect) -> List[ModuleResponse]:
-        """
-        Gets all modules for a specified course and dialect, sorted by number
-        """
+        """Gets all modules for a specified course and dialect, sorted by number"""
         modules = db.query(Module).filter(
             Module.course == course,
             or_(

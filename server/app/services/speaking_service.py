@@ -7,14 +7,14 @@ from typing import Dict, Any
 from langgraph.graph import StateGraph, END # Helps us build graphs
 from langchain_openai import ChatOpenAI # Helps us easily make GPT calls
 from langchain_core.messages import SystemMessage, HumanMessage
-from app.models.voice_tutor.voice_tutor import VoiceTutorQuestionInput, VoiceTutorQuestionOutput, VoiceTutorState, VoiceTutorInput, VoiceTutorOutput, PronounciationScores, SemanticEvaluation, VocabWordResponse
+from app.models.ai.speaking import VoiceTutorQuestionInput, VoiceTutorQuestionOutput, VoiceTutorState, VoiceTutorInput, VoiceTutorOutput, PronounciationScores, SemanticEvaluation, VocabWordResponse
 from pydub import AudioSegment
 from app.utils.constants import AZURE_LANGUAGE_CODE, PRONOUNCIATION_BASE_URL, TTS_BASE_URL
 from app.utils.prompts.voice_tutor.voice_tutor_generate_feedback import build_voice_tutor_generate_feedback_messages
 from app.utils.prompts.voice_tutor.voice_tutor_semantic_eval import build_vocab_semantic_eval_messages # Helps us convert between audio formats like webm -> wav
 
 
-class VoiceTutorService:
+class SpeakingService:
     """This class runs the voice tutor langchain workflow and returns the result to the user."""
 
     def __init__(self):
@@ -41,16 +41,16 @@ class VoiceTutorService:
 
         # 2. Add needed nodes to graph
         # A node just takes the state as input -> does stuff -> updates the state
-        workflow.add_node("transcription", self._transcribe_node)
+        workflow.add_node("transcribe", self._transcribe_node)
         workflow.add_node("pronounciation_eval", self._pronounciation_eval_node)
         workflow.add_node("semantic_eval", self._semantic_eval_node)
         workflow.add_node("generate_feedback", self._generate_feedback_node)
         workflow.add_node("speak", self._speak_node)
 
-        workflow.set_entry_point("transcription")
+        workflow.set_entry_point("transcribe")
 
         # 3. Add edges between nodes
-        workflow.add_edge("transcription", "pronounciation_eval")
+        workflow.add_edge("transcribe", "pronounciation_eval")
         workflow.add_edge("pronounciation_eval", "semantic_eval")
         workflow.add_edge("semantic_eval", "generate_feedback")
         workflow.add_edge("generate_feedback", "speak")
@@ -114,7 +114,8 @@ class VoiceTutorService:
             return {"transcription": transcription}
         except Exception as e:
             return {
-                "error": f"{function_code}: Trancription failed: {str(e)}"
+                "status": "fail",
+                "error": f"{function_code}: Transcription failed: {str(e)}"
             }
 
 
@@ -183,7 +184,10 @@ class VoiceTutorService:
 
             return {"pronounciation_scores": scores}
         except Exception as e:
-            return {"error": f"{function_code}: Pronounciation scoring failed: {str(e)}"}
+            return {
+                "status": "fail",
+                "error": f"{function_code}: Pronounciation scoring failed: {str(e)}"
+            }
 
     
     async def _semantic_eval_node(self, state: VoiceTutorState) -> Dict[str, Any]:
@@ -237,7 +241,10 @@ class VoiceTutorService:
                 "status": status
             }
         except Exception as e:
-            return {"error": f"{function_code}: Semantic evaluation failed: {str(e)}"}
+            return {
+                "status": "fail",
+                "error": f"{function_code}: Semantic evaluation failed: {str(e)}"
+            }
 
 
     async def _generate_feedback_node(self, state: VoiceTutorState) -> Dict[str, Any]:
@@ -290,7 +297,10 @@ class VoiceTutorService:
             
             return {"feedback_text": feedback_text}
         except Exception as e:
-            return {"error": f"{function_code}: Generating feedback failed: {str(e)}"}
+            return {
+                "status": "fail",
+                "error": f"{function_code}: Generating feedback failed: {str(e)}"
+            }
 
 
     async def _speak_node(self, state=VoiceTutorState) -> Dict[str, Any]:
@@ -333,7 +343,10 @@ class VoiceTutorService:
 
             return {"feedback_audio": feedback_audio}
         except Exception as e:
-            return {"error": f"{function_code}: Generating feedback audio failed: {str(e)}"}
+            return {
+                "status": "fail",
+                "error": f"{function_code}: Generating feedback audio failed: {str(e)}"
+            }
 
 
     async def generate_response(self, input: VoiceTutorInput) -> VoiceTutorOutput:

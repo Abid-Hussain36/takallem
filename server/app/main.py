@@ -65,42 +65,45 @@ from app.db.schemas.reading_comprehension_writing_problem_set import ReadingComp
 from app.db.schemas.dialect_selection import DialectSelection
 from app.db.schemas.dialect_selection_dialects import dialect_selection_dialects
 
-from app.routers.letter import letter_router
-from app.routers.voice_tutor import voice_tutor_router
 from app.routers.auth import auth_router
 from app.routers.user import user_router
 from app.routers.user_course_progress import user_course_progress_router
 from app.routers.module import module_router
-from app.routers.language import language_router
 from app.routers.resource import resource_router
+from app.routers.language import language_router
+from app.routers.pronounciation import pronounciation_router
+from app.routers.speaking import speaking_router
+from app.routers.writing import writing_router
+
 from app.db.database import get_db
 
 
 app = FastAPI()
 
+
 # Creates a Middleware to allow CORS to accept requests from the client running locally.
+# We only accept requests coming from these clients
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "http://localhost:3000",      # Next.js dev server
         "http://127.0.0.1:3000",      # Alternative localhost
-        "http://localhost:8000",      # Backend (if needed)
-        "http://127.0.0.1:8000",      # Backend alternative
     ],
-    allow_credentials=True,
+    allow_credentials=True,           # Allow usage of authentication headers
     allow_methods=["*"],              # Allow all HTTP methods
     allow_headers=["*"],              # Allow all headers
 )
 
 # Makes all the routes from the routers available.
-app.include_router(letter_router, prefix="/letter")
-app.include_router(voice_tutor_router, prefix="/voice-tutor")
 app.include_router(auth_router, prefix="/auth")
 app.include_router(user_router, prefix="/user")
 app.include_router(user_course_progress_router, prefix="/user-course-progress")
 app.include_router(module_router, prefix="/modules")
-app.include_router(language_router, prefix="/languages")
 app.include_router(resource_router, prefix="/resource")
+app.include_router(language_router, prefix="/languages")
+app.include_router(pronounciation_router, "/pronounciation")
+app.include_router(writing_router, prefix="/writing")
+app.include_router(speaking_router, prefix="/speaking")
 
 
 @app.get("/health")

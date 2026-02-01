@@ -1,4 +1,4 @@
-from app.models.letter.writing import DictationResponse, DictationScores, LetterHandwritingScores, LetterJoiningResponse, LetterJoiningScores, LetterWritingResponse, WritingQAResponse, WritingPhotoRetakeResponse
+from app.models.ai.writing import DictationResponse, DictationScores, LetterHandwritingScores, LetterJoiningResponse, LetterJoiningScores, LetterWritingResponse, WritingQAResponse, WritingPhotoRetakeResponse
 from app.utils.openai import openai_client
 from fastapi import UploadFile
 from typing import Union, List
@@ -10,7 +10,7 @@ from app.utils.enums import LetterPosition
 import base64, os, json
 
 
-class LetterWritingService:
+class WritingService:
     async def check_letter_writing(self, user_image: UploadFile, target_image: UploadFile, letter: str, position: LetterPosition) -> Union[LetterWritingResponse, WritingPhotoRetakeResponse]:
         thresholds = {
             "baseline_qa_confidence": 55.0,

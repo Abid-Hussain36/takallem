@@ -16,14 +16,6 @@ from app.models.db.user.update_user_request import UpdateUserRequest
 user_router = APIRouter()
 
 
-@user_router.post("/create", response_model=UserResponse)
-def create_user(
-    user_data: SignupRequest,
-    db: Session = Depends(get_db),
-    service: UserService = Depends(get_user_service)
-) -> UserResponse:
-    return service.create_user(db, user_data)
-
 @user_router.get("/me", response_model=UserResponse)
 def get_authed_user(
     email: str = Depends(get_current_user_email), # Takes in the header auth token and validates by fetching the user email
@@ -31,13 +23,8 @@ def get_authed_user(
     service: UserService = Depends(get_user_service),
 ) -> UserResponse:
     """Get the currently authenticated user's profile by their email"""
-    user = service.get_user_by_email(db, email)
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not found"
-        )
-    return user
+    return service.get_authed_user(db, email)
+
 
 @user_router.put("/me", response_model=UserResponse)
 def update_user_profile(
@@ -49,6 +36,7 @@ def update_user_profile(
     """Updates user profile fields (first_name, last_name, gender)"""
     return service.update_user_profile(db, email, updateUserRequest)
 
+
 @user_router.delete("/me", response_model=SuccessMessage)
 def delete_user(
     email: str = Depends(get_current_user_email), 
@@ -57,6 +45,17 @@ def delete_user(
 ) -> SuccessMessage:
     """Delete a user by email"""
     return service.delete_user_by_email(db, email)
+
+
+@user_router.put("/current-course/update/{course}", response_model=UserResponse)
+def update_current_course(
+    course: AvailableCourse,
+    email: str = Depends(get_current_user_email),
+    db: Session = Depends(get_db),
+    service: UserService = Depends(get_user_service)
+) -> UserResponse:
+    """Updates the current course field for user"""
+    return service.update_current_course(db, email, course)
 
 
 @user_router.put("/current-course/clear", response_model=UserResponse)
@@ -69,18 +68,7 @@ def clear_current_course(
     return service.clear_current_course(db, email)
 
 
-@user_router.put("/current-course/{course}", response_model=UserResponse)
-def update_current_course(
-    course: AvailableCourse,
-    email: str = Depends(get_current_user_email),
-    db: Session = Depends(get_db),
-    service: UserService = Depends(get_user_service)
-) -> UserResponse:
-    """Updates the current course field for user"""
-    return service.update_current_course(db, email, course)
-
-
-@user_router.put("/current-dialect/{dialect}", response_model=UserResponse)
+@user_router.put("/current-dialect/update/{dialect}", response_model=UserResponse)
 def update_current_dialect(
     dialect: AvailableDialect,
     email: str = Depends(get_current_user_email),
@@ -89,6 +77,16 @@ def update_current_dialect(
 ) -> UserResponse:
     """Updates the current dialect field for user"""
     return service.update_current_dialect(db, email, dialect)
+
+
+@user_router.put("/current-dialect/clear", response_model=UserResponse)
+def clear_current_dialect(
+    email: str = Depends(get_current_user_email),
+    db: Session = Depends(get_db),
+    service: UserService = Depends(get_user_service)
+) -> UserResponse:
+    """Clears the current dialect for the user"""
+    service.clear_current_dialect(db, email)
 
 
 @user_router.put("/language-learning/add/{language}", response_model=UserResponse)
@@ -113,6 +111,28 @@ def remove_language_learning(
     return service.remove_language_learning(db, email, language)
 
 
+@user_router.put("/language-learned/add/{language}", response_model=UserResponse)
+def add_language_learned(
+    language: AvailableLanguage,
+    email: str = Depends(get_current_user_email),
+    db: Session = Depends(get_db),
+    service: UserService = Depends(get_user_service)
+) -> UserResponse:
+    """Adds a language to the user's language-learned list"""
+    return service.add_language_learned(db, email, language)
+
+
+@user_router.put("/language-learned/remove/{language}", response_model=UserResponse)
+def remove_language_learned(
+    language: AvailableLanguage,
+    email: str = Depends(get_current_user_email),
+    db: Session = Depends(get_db),
+    service: UserService = Depends(get_user_service)
+) -> UserResponse:
+    """Removes a language from the user's language-learned list"""
+    return service.remove_language_learned(db, email, language)
+
+
 @user_router.put("/course-completed/add/{course}", response_model=UserResponse)
 def add_course_completed(
     course: AvailableCourse,
@@ -133,25 +153,3 @@ def remove_course_completed(
 ) -> UserResponse:
     """Removes a course from the user's courses-completed list"""
     return service.remove_course_completed(db, email, course)
-
-
-@user_router.put("/language-learned/add/{language}", response_model=UserResponse)
-def add_language_learned(
-    language: str,
-    email: str = Depends(get_current_user_email),
-    db: Session = Depends(get_db),
-    service: UserService = Depends(get_user_service)
-) -> UserResponse:
-    """Adds a language to the user's language-learned list"""
-    return service.add_language_learned(db, email, language)
-
-
-@user_router.put("/language-learned/remove/{language}", response_model=UserResponse)
-def remove_language_learned(
-    language: str,
-    email: str = Depends(get_current_user_email),
-    db: Session = Depends(get_db),
-    service: UserService = Depends(get_user_service)
-) -> UserResponse:
-    """Removes a language from the user's language-learned list"""
-    return service.remove_language_learned(db, email, language)

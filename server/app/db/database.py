@@ -23,7 +23,7 @@ engine = create_engine(
 )
 
 # A Session is what you use to talk to the database.
-# SessionLocal is a factory you can use to create new Session objects.
+# SessionLocal is a factory you can use to create new Session objects (session creator).
 SessionLocal = sessionmaker(
     autocommit=False, # You need to commit transactions for them to be processed
     autoflush=False, # Your changes are not automatically implemented in the database until they are committed

@@ -1,8 +1,8 @@
 from typing import List
-from sqlalchemy import ForeignKey
+from sqlalchemy import Enum, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.db.schemas.resource import Resource
-from app.db.enums import ResourceType
+from app.db.enums import AvailableDialect, ResourceType
 from app.models.db.problem_set.vocab_listening_problem_sets_response import VocabListeningProblemSetsResponse
 
 
@@ -12,6 +12,7 @@ class VocabListeningProblemSets(Resource):
     id: Mapped[int] = mapped_column(ForeignKey("resources.id", ondelete="CASCADE"), primary_key=True)
 
     set_limit: Mapped[int] = mapped_column()
+    dialect: Mapped[AvailableDialect | None] = mapped_column(Enum(AvailableDialect))
 
     # Relationship
     problem_sets: Mapped[List["VocabListeningProblemSet"]] = relationship(

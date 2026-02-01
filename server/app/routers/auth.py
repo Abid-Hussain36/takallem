@@ -20,7 +20,8 @@ def signup(
     db: Session = Depends(get_db),
     auth_service: AuthService = Depends(get_auth_service),
     user_service: UserService = Depends(get_user_service)
-):
+) -> AuthResponse:
+    """Takes in signup data and creates a new user in auth and the users table"""
     return auth_service.signup(user_data, db, user_service)
 
 
@@ -30,5 +31,6 @@ def login(
     db: Session = Depends(get_db),
     auth_service: AuthService = Depends(get_auth_service),
     user_service: UserService = Depends(get_user_service)
-):
+) -> AuthResponse:
+    """Takes in login data and gets the user from auth and gets the related record"""
     return auth_service.login(user_data, db, user_service)

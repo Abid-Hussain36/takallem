@@ -47,7 +47,7 @@ const VocabSpeakingProblemSets = () => {
     const mediaRecorderRef = useRef<MediaRecorder | null>(null);
     const audioChunksRef = useRef<Blob[]>([]);
 
-    if (!resource || !resource.resource) {
+    if (!resource || !resource.resource || !userCourseProgress) {
         return (
             <div className={styles.loadingContainer}>
                 <div className={styles.spinner}></div>
@@ -56,21 +56,102 @@ const VocabSpeakingProblemSets = () => {
         );
     }
 
-    // UserCourseProgress Fields
-    const userGender = user!.gender;
-    const problemCounter: number = userCourseProgress!.problem_counter;
-    
     // VocabSpeakingProblemSets Data
     const problemSets = resource.resource as VocabSpeakingProblemSetsResponse;
+    const userDialect = userCourseProgress?.dialect;
+    const collectionDialect = problemSets.dialect;
+
+    console.log("Collection dialect:", collectionDialect);
+    console.log("User dialect:", userDialect);
+
+    // Filter by dialect: only show if collection dialect matches user's dialect or is null (universal)
+    if (collectionDialect !== null && collectionDialect !== undefined && collectionDialect !== userDialect) {
+        console.log("Dialect mismatch - collection not available for user's dialect");
+        return (
+            <div className={styles.loadingContainer}>
+                <div className={styles.spinner}></div>
+                <p className={styles.loadingText}>
+                    This problem set is not available for your selected dialect ({userDialect}).
+                </p>
+            </div>
+        );
+    }
+
+    console.log("Dialect check passed - showing problem sets for", collectionDialect || "all dialects");
+
+    // UserCourseProgress Fields
+    const userGender = user!.gender;
+    const problemCounter: number = userCourseProgress.problem_counter;
+    
+    // Find problem set for user's gender
     const problemSet = problemSets.problem_sets.find(pSet => pSet.gender === userGender);
-    const problems = problemSet!.problems;
+
+    // Safety check: ensure problem set exists
+    if (!problemSet || !problemSet.problems || problemSet.problems.length === 0) {
+        return (
+            <div className={styles.loadingContainer}>
+                <div className={styles.spinner}></div>
+                <p className={styles.loadingText}>
+                    No speaking problems available for your gender ({userGender}).
+                </p>
+            </div>
+        );
+    }
+
+    const problems = problemSet.problems;
+    
+    // Stopping Variables
+    const problemCounterStop = problemSet.problem_count - 1;
+    const exerciseComplete = problemCounter >= problemCounterStop;
+
+    // Reset problem counter if out of bounds
+    useEffect(() => {
+        const resetCounterIfNeeded = async () => {
+            if (problemCounter < 0 || problemCounter >= problems.length) {
+                console.warn("Problem counter out of bounds. Resetting...", {
+                    problemCounter,
+                    problemsLength: problems.length
+                });
+                
+                const authToken = localStorage.getItem("token");
+                try {
+                    const response = await fetch(
+                        `${process.env.NEXT_PUBLIC_SERVER_URL}/user-course-progress/problem_counter/clear/${userCourseProgress.id}`,
+                        {
+                            method: "PUT",
+                            headers: {
+                                'Authorization': `Bearer ${authToken}`,
+                                'Content-Type': 'application/json'
+                            }
+                        }
+                    );
+
+                    if (response.ok) {
+                        const updated = await response.json();
+                        setUserCourseProgress(updated);
+                    }
+                } catch (err) {
+                    console.error("Failed to reset problem counter:", err);
+                }
+            }
+        };
+
+        resetCounterIfNeeded();
+    }, [problemCounter, problems.length]);
+
+    // Safety check: if problem doesn't exist yet (waiting for reset), show loading
+    if (!problems[problemCounter]) {
+        return (
+            <div className={styles.loadingContainer}>
+                <div className={styles.spinner}></div>
+                <p className={styles.loadingText}>Initializing exercise...</p>
+            </div>
+        );
+    }
+
     const problem = problems[problemCounter];
     const question: string = problem.question;
     const vocabWords: VocabWordResponse[] = problem.vocab_words;
-    
-    // Stopping Variables
-    const problemCounterStop = problemSet!.problem_count - 1;
-    const exerciseComplete = problemCounter >= problemCounterStop;
 
     useEffect(() => {
         const handleQuestionEnd = () => setIsPlayingQuestion(false)

@@ -208,18 +208,21 @@ export interface DiscriminationProblemSetResponse extends BaseResource {
 export interface VocabReadingProblemSetsResponse extends BaseResource {
     resource_type: ResourceType.VOCAB_READING_PROBLEM_SETS;
     set_limit: number;
+    dialect?: AvailableDialect | null;
     problem_sets: VocabReadingProblemSetResponse[];
 }
 
 export interface VocabListeningProblemSetsResponse extends BaseResource {
     resource_type: ResourceType.VOCAB_LISTENING_PROBLEM_SETS;
     set_limit: number;
+    dialect?: AvailableDialect | null;
     problem_sets: VocabListeningProblemSetResponse[];
 }
 
 export interface VocabSpeakingProblemSetsResponse extends BaseResource {
     resource_type: ResourceType.VOCAB_SPEAKING_PROBLEM_SETS;
     set_limit: number;
+    dialect?: AvailableDialect | null;
     problem_sets: VocabSpeakingProblemSetResponse[];
 }
 

@@ -8,20 +8,17 @@ from app.utils.resource_map import RESOURCE_TYPE_TO_CLASS
 
 
 class ResourceService:
-    def get_polymorphic_resource(self, db: Session, id: int) -> PolymorphicResource:
+    def get_resource(self, db: Session, id: int) -> PolymorphicResource:
         """
-        Fetches a polymorphic resource by ID with all relationships eagerly loaded.
-        SQLAlchemy's polymorphic loading automatically returns the correct subclass.
-        
-        This uses selectinload('*') to eagerly load all relationships defined on the resource.
+        Fetches a polymorphic resource by ID with all relationships eagerly loaded.        
         """
         # Query from base Resource table - SQLAlchemy will return the correct subclass
         # based on the polymorphic_identity (resource_type)
         # Eagerly load all relationships to avoid lazy loading issues
         # selectinload('*') loads all relationships in separate SELECT statements
-        polymorphic_resource = db.query(Resource).filter(Resource.id == id).options(selectinload('*')).first()
+        resource = db.query(Resource).filter(Resource.id == id).options(selectinload('*')).first()
         
-        if not polymorphic_resource:
+        if not resource:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"Resource with id {id} not found."
@@ -29,4 +26,4 @@ class ResourceService:
         
         # The to_model() method will be called on the correct subclass
         # (e.g., VocabLecture, InfoLecture, etc.) with all relationships loaded
-        return polymorphic_resource.to_model()
+        return resource.to_model()

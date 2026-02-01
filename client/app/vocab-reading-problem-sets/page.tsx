@@ -166,6 +166,14 @@ const VocabReadingProblemSets = () => {
     }
 
     const handleNext = async () => {
+        console.log("=== handleNext called ===");
+        console.log("atSetEnd:", atSetEnd);
+        console.log("exerciseComplete:", exerciseComplete);
+        console.log("problemCounter:", problemCounter);
+        console.log("problemCounterStop:", problemCounterStop);
+        console.log("currProblemIdx:", currProblemIdx);
+        console.log("problems.length:", problems.length);
+        
         if(atSetEnd && exerciseComplete){
             setIsLoading(true);
             const authToken = localStorage.getItem("token");
@@ -285,7 +293,7 @@ const VocabReadingProblemSets = () => {
 
                 const updatedUserCourseProgress: UserCourseProgressResponse = await incrementCurrentVocabProblemSetResponse.json() as UserCourseProgressResponse;
 
-                const problemSetIdx = updatedUserCourseProgress.current_vocab_problem_set
+                const problemSetIdx = updatedUserCourseProgress.current_vocab_problem_set - 1; // Convert to 0-based index
                 const problemsCount = vocabReadingProblemSetsData.problem_sets[problemSetIdx].problem_count
                 const newStatus = Array(problemsCount).fill("unanswered") as ProgressStatus[];
 
