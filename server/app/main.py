@@ -101,7 +101,7 @@ app.include_router(user_course_progress_router, prefix="/user-course-progress")
 app.include_router(module_router, prefix="/modules")
 app.include_router(resource_router, prefix="/resource")
 app.include_router(language_router, prefix="/languages")
-app.include_router(pronounciation_router, "/pronounciation")
+app.include_router(pronounciation_router, prefix="/pronounciation")
 app.include_router(writing_router, prefix="/writing")
 app.include_router(speaking_router, prefix="/speaking")
 

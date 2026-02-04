@@ -29,6 +29,7 @@ class VocabListeningProblemSets(Resource):
             id=self.id,
             resource_type=self.resource_type,
             set_limit=self.set_limit,
+            dialect=self.dialect,
             problem_sets=[ps.to_model() for ps in self.problem_sets]
         )
 

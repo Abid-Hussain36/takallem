@@ -1,5 +1,6 @@
 from typing import Literal, List
 from pydantic import BaseModel
+from app.db.enums import AvailableDialect, AvailableLanguage
 
 
 class PronounciationResponse(BaseModel):
@@ -11,6 +12,8 @@ class PronounciationResponse(BaseModel):
 
 class PronounciationExplainInput(BaseModel):
     query: str
+    language: AvailableLanguage
+    dialect: AvailableDialect | None
     phrase: str
     status: Literal["pass", "fail"]
     transcription: str

@@ -1,4 +1,4 @@
-from app.models.ai.pronounciation import LetterPronounciationResponse, LetterPronounciationExplainInput, LetterPronounciationExplainResponse, LetterWordPronounciationExplainInput, PronounciationExplainInput, PronounciationExplainResponse, PronounciationResponse
+from app.models.ai.pronounciation import PronounciationExplainInput, PronounciationExplainResponse, PronounciationResponse
 from fastapi import HTTPException, UploadFile, status
 from pydub import AudioSegment
 from app.utils.constants import PRONOUNCIATION_BASE_URL, AZURE_LANGUAGE_CODE
@@ -12,6 +12,7 @@ from app.utils.prompts.pronounciation.explain_pronounciation_messages import bui
 class PronounciationService():
     def _get_language_code(self, language: AvailableLanguage, dialect: AvailableDialect | None) -> str:
         """Get the Azure language code based on language and optional dialect."""
+
         language_mapping = AZURE_LANGUAGE_CODE.get(language)
         
         if language_mapping is None:
@@ -114,8 +115,20 @@ class PronounciationService():
         ):
             status = "pass"
         
+        language_value = language.value
+        dialect_value = dialect.value if dialect else None
+
         # 5. Generating pronounciation feedback with OpenAI API and parsing response
-        pronounciation_messages = build_check_pronounciation_messages(phrase, transcription, accuracy, completeness, overall_score, status)
+        pronounciation_messages = build_check_pronounciation_messages(
+            phrase, 
+            language_value, 
+            dialect_value, 
+            transcription, 
+            accuracy, 
+            completeness, 
+            overall_score, 
+            status
+        )
 
         try:
             chat_response = await openai_client.chat.completions.create(
@@ -126,7 +139,8 @@ class PronounciationService():
 
             chat_response_content = chat_response.choices[0].message.content
             chat_response_obj = json.loads(chat_response_content)
-            pronounciation_check_response = LetterPronounciationResponse(
+            
+            pronounciation_check_response = PronounciationResponse(
                 status=status,
                 transcription=transcription,
                 feedback=chat_response_obj["feedback"],
@@ -143,7 +157,11 @@ class PronounciationService():
 
 
     async def explain_pronounciation(self, input: PronounciationExplainInput) -> PronounciationExplainResponse:
+        """Takes in the previous user performance evaluation and query and answers the query."""
+
         query = input.query
+        language = input.language.value
+        dialect = input.dialect.value if input.dialect else None
         phrase = input.phrase
         status = input.status
         transcription = input.transcription
@@ -151,7 +169,17 @@ class PronounciationService():
         mistake_tags_string = str(input.mistake_tags)
         performance_reflection = input.performance_reflection
 
-        explain_messages = build_explain_pronounciation_messages(query, phrase, status, transcription, previous_feedback, mistake_tags_string, performance_reflection)
+        explain_messages = build_explain_pronounciation_messages(
+            query, 
+            language,
+            dialect,
+            phrase, 
+            status, 
+            transcription, 
+            previous_feedback, 
+            mistake_tags_string, 
+            performance_reflection
+        )
 
         try:
             chat_response = await openai_client.chat.completions.create(
@@ -162,8 +190,9 @@ class PronounciationService():
 
             chat_response_content = chat_response.choices[0].message.content
             chat_response_obj = json.loads(chat_response_content)
-            explain_response = LetterPronounciationExplainResponse(
-                feedback=chat_response_obj["feedback"]
+
+            explain_response = PronounciationExplainResponse(
+                response=chat_response_obj["response"]
             )
 
             return explain_response

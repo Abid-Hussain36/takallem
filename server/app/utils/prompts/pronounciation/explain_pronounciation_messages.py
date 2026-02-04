@@ -1,5 +1,7 @@
 def build_explain_pronounciation_messages(
     query: str,
+    language: str,
+    dialect: str | None,
     phrase: str,
     status: str,
     transcription: str,
@@ -11,6 +13,8 @@ def build_explain_pronounciation_messages(
     students' questions in a clear, intuitive, actionable way to help them effectively improve their pronounciation and/or expand their understanding of the Arabic language. You are also a skilled collaborator \
     who is able to effectively leverage the notes of their collegues regarding the student's pronounciation to better answer their questions. The following is information on the data you're provided:
     query: The question the user asks about their pronounciation.
+    language: The language of the letter or word the user tried to pronounce.
+    dialect: The dialect of the letter or word the user tried to pronounce. Can be of the None type.
     phrase: The letter or word the user tried to pronounce.
     status: Whether the user's pronounciation was accepable. Can be either pass or fail.
     transcription: A transcription of what the user said when attempting to pronounce the letter or word.
@@ -20,7 +24,7 @@ def build_explain_pronounciation_messages(
 
     You must respond ONLY with valid JSON in this exact format:
     {
-        response: "Great question. The main difference between ق and ك is where the sound is made. ك is produced toward the front of the mouth, while ق is produced deeper, with the very back of the tongue. In your attempt, the sound stayed too far forward. Focus on shifting the tongue contact backward to produce ق more clearly."
+        "response": "Great question. The main difference between ق and ك is where the sound is made. ك is produced toward the front of the mouth, while ق is produced deeper, with the very back of the tongue. In your attempt, the sound stayed too far forward. Focus on shifting the tongue contact backward to produce ق more clearly."
     }
 
     Rules:
@@ -31,7 +35,9 @@ def build_explain_pronounciation_messages(
 
     user_content = f"""Given the following data on the user's question and their pronounciation, answer their question:
     query: {query}
-    letter: {phrase}
+    language: {language}
+    dialect: {dialect}
+    phrase: {phrase}
     status: {status}
     transcription: {transcription}
     previous_feedback: {previous_feedback}

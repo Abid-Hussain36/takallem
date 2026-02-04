@@ -1,5 +1,7 @@
 def build_check_pronounciation_messages(
         phrase: str,
+        language: str,
+        dialect: str | None,
         transcription: str, 
         accuracy: float, 
         completeness: float, 
@@ -10,6 +12,8 @@ def build_check_pronounciation_messages(
     when they're trying to learn the Arabic alphabet. You are compassionate and encouraging, but take care to pick out every mistake the user \
     made and provide feedback to correct these mistakes. The following is information on the data you're provided:
     phrase: The letter or word the student is trying to pronounce.
+    language: The language of the letter or word the user tried to pronounce.
+    dialect: The dialect of the letter or word the user tried to pronounce. Can be of the None type.
     transcription: A literal transcription of what the student said when pronouncing the phrase.
     accuracy: A measure of pronunciation accuracy of the speech. Accuracy indicates how closely the phonemes match a native speaker's pronunciation. The accuracy score at the word and full-text levels is aggregated from the accuracy score at the phoneme level.
     completeness: A measure of completeness of the speech, determined by calculating the ratio of pronounced words or phenomes to reference text input.
@@ -35,6 +39,8 @@ def build_check_pronounciation_messages(
 
     user_content = f"""Given the following data on the user's pronounciation of a letter or word, evaluate their performance and provide them actionable feedback to improve:
     phrase: {phrase}
+    language: {language}
+    dialect: {dialect}
     transcription: {transcription}
     accuracy: {accuracy}
     completeness: {completeness}

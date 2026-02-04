@@ -15,6 +15,7 @@ class SemanticEvaluation(BaseModel):
     """Shows how much the answer made sematic sense of for the question asked"""
     vocab_words_used: List[str] = []
     answer_makes_sense: bool = False
+    grammatical_score: float = 0.0
     grammar_notes: str = ""
 
 
@@ -24,14 +25,14 @@ class VoiceTutorInput(BaseModel):
     language: AvailableLanguage = AvailableLanguage.FRENCH
     dialect: AvailableDialect | None = None
     vocab_words: List[VocabWordResponse] = []
-    user_audio_base64: str = ""
+    user_audio_base64: str | None = None
 
 
 class VoiceTutorOutput(BaseModel):
     """AI's evaluation of user's performance and feedback"""
     status: Literal["pass", "fail"]
-    feedback_text: str = ""
-    feedback_audio: str | None = None
+    feedback_text: str | None = None
+    feedback_audio_base64: str | None = None
 
 
 class VoiceTutorState(BaseModel):
@@ -40,22 +41,39 @@ class VoiceTutorState(BaseModel):
     language: AvailableLanguage = AvailableLanguage.FRENCH
     dialect: AvailableDialect | None = None
     vocab_words: List[VocabWordResponse] = []
-    user_audio_base64: str = ""
+    user_audio_base64: str | None = None
     # Evaluation
     transcription: str = ""
     pronounciation_scores: PronounciationScores = PronounciationScores()
     semantic_evaluation: SemanticEvaluation = SemanticEvaluation()
     # Output
     status: Literal["pass", "fail", "pending"] = "pending"
-    feedback_text: str = ""
-    feedback_audio: str | None = None
-    # Error
-    error: str | None = None
+    performance_reflection: str = ""
+    feedback_text: str | None = None
+    feedback_audio_base64: str | None = None
 
 
-class VoiceTutorQuestionInput(BaseModel):
-    question: str
+class VoiceTutorExplainInput(BaseModel):
+    query: str = ""
+    question: str = ""
+    language: AvailableLanguage = AvailableLanguage.FRENCH
+    dialect: AvailableDialect | None = None
+    vocab_words: List[VocabWordResponse] = []
+    transcription: str = ""
+    pronounciation_scores: PronounciationScores = PronounciationScores()
+    semantic_evaluation: SemanticEvaluation = SemanticEvaluation()
+    status: Literal["pass", "fail"]
+    performance_reflection: str
+    previous_feedback: List[str] = []
+
+class VoiceTutorExplainOutput(BaseModel):
+    response_text: str = ""
 
 
-class VoiceTutorQuestionOutput(BaseModel):
-    question_audio: str
+class VoiceTutorTTSInput(BaseModel):
+    text: str = ""
+
+
+class VoiceTutorTTSOutput(BaseModel):
+    response_audio_base64: str | None = None
+

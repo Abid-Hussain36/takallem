@@ -2,7 +2,13 @@ from typing import List
 from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
 
 
-def build_vocab_semantic_eval_messages(language: str, dialect: str | None, question: str, vocab_words: str, transcription: str) -> List[BaseMessage]:
+def build_semantic_eval_messages(
+    language: str, 
+    dialect: str | None, 
+    question: str, 
+    vocab_words: str, 
+    transcription: str
+) -> List[BaseMessage]:
 
     system = """You are an Arabic language tutor evaluating a student's spoken response. Your job is to analyze their answer and determine:
     1. Did they use any of the target vocabulary words?
@@ -20,16 +26,16 @@ def build_vocab_semantic_eval_messages(language: str, dialect: str | None, quest
     IMPORTANT: You MUST respond with ONLY a JSON object in this exact format:
     {
         "vocab_words_used": ["list", "of", "words", "they", "used"],
-        "answer_makes_sense": true,
+        "answer_makes_sense": True,
+        "grammatical_score": 85.0,
         "grammar_notes": "Comprehensive notes about their grammar",
-        "semantic_score": 85.0,
     }
 
     Rules:
-    - vocab_words_used is a list of the vocab words that the user used in their response.
+    - vocab_words_used is a list of the vocab words OUT OF THE vocab_words that the user used in their response.
     - answer_makes_sense: Whether the user's response is a sensible answer to the question asked.
+    - grammatical_score: A score representing the grammatical accuracy of the student's response. The score MUST be between 0.0 and 100.0.
     - grammar_notes: Notes about the user's grammar, highlighting grammatical errors honestly and meticulously if present, but also briefly highlighting what grammatical things the user did correctly.
-    - semantic_score: A float value between 0.0 and 100.0 that grades how sensible and pertinent the user's answer is to the question asked.
     """.strip()
 
     human = f"""Given the following data about the question asked and the user's response, evaluate the quality of their answer:

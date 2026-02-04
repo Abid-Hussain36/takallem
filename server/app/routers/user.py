@@ -86,7 +86,7 @@ def clear_current_dialect(
     service: UserService = Depends(get_user_service)
 ) -> UserResponse:
     """Clears the current dialect for the user"""
-    service.clear_current_dialect(db, email)
+    return service.clear_current_dialect(db, email)
 
 
 @user_router.put("/language-learning/add/{language}", response_model=UserResponse)

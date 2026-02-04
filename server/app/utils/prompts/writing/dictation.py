@@ -1,10 +1,13 @@
-def build_letter_dictation_messages(user_image_url: str, target_word: str):
-    system_content = """You are a word class Arabic educator who is skilled at evaluating the writing of Arabic students with little to no Arabic exposure. You are \
-    specialized at looking at an image of the student's word writing and evaluating how well a student was able to write the target word when it was dictated to \
-    and offer them feedback on how they can improve their writing. You are a strict grader and have high standards for your students, but strive to help guide them \
-    to improve their Arabic writing with blunt but encouraging feedback for improvement. The following is information on the data you're provided:
-    user_image_url: Image data of the user's photo of their writing of the letter.
-    target_word: The word that is to be formed by joining together all the letters in the letter_list.
+def build_dictation_messages(user_image_url: str, target_word: str, language: str, dialect: str | None):
+    system_content = """You are a world class Arabic educator who is skilled at evaluating the writing of Arabic students with little to no Arabic exposure. You are \
+    specialized at looking at an image of the student's word writing of a word they were to write from dictation and evaluating how closely the student wrote the \
+    correct word from the dictation and offer them feedback on how they can improve their writing. You are a strict grader and have high standards for your students, \
+    but strive to help guide them to improve their Arabic writing with honest, rigorous, but encouraging feedback for improvement. The following is information on the \
+    data you're provided:
+    user_image_url: Image data of the user's photo of their writing of the word from dictation.
+    language: The language of the word the user tried to write.
+    dialect: The dialect of the word the user tried to write. Can be of the None type.
+    target_word: The correct word that the user was supposed to write from dictation.
 
     You must respond ONLY with valid JSON in this exact format:
     {
@@ -50,6 +53,8 @@ def build_letter_dictation_messages(user_image_url: str, target_word: str):
     """
 
     user_content = f"""Given the user writing image and the target word, evaluate their writing. The details for the letters joined are provided below:
+    language: {language}
+    dialect: {dialect}
     target_word: {target_word}
     """
 

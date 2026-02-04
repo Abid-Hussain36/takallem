@@ -1,4 +1,3 @@
-# API URLS
 import os
 from typing import Dict
 from dotenv import load_dotenv
@@ -24,4 +23,38 @@ AZURE_LANGUAGE_CODE: Dict[AvailableLanguage, Dict[AvailableDialect, str] | str] 
     },
     AvailableLanguage.FRENCH: "fr-FR",
     AvailableLanguage.SPANISH: "es-MX"
+}
+
+TARGET_IMAGE_NAME: Dict[AvailableLanguage, Dict[str, str]] = {
+    AvailableLanguage.ARABIC: {
+        "ا": "Alif",
+        "ع": "Ayn",
+        "ب": "",
+        "د": "",
+        "ض": "",
+        "ذ": "",
+        "ف": "",
+        "غ": "",
+        "ح": "",
+        "ه": "",
+        "ء": "",
+        "ج": "",
+        "ك": "",
+        "خ": "",
+        "ل": "",
+        "م": "",
+        "ن": "",
+        "ق": "",
+        "ر": "",
+        "ص": "",
+        "س": "",
+        "ش": "",
+        "ط": "",
+        "ت": "",
+        "ث": "",
+        "و": "",
+        "ي": "",
+        "ظ": "",
+        "ز": "",
+    }
 }

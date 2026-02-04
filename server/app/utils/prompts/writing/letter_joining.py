@@ -1,6 +1,10 @@
-from typing import List
-
-def build_letter_joining_messages(user_image_url: str, letter_list: List[str], target_word: str):
+def build_letter_joining_messages(
+    user_image_url: str, 
+    letter_list: str, 
+    target_word: str,
+    language: str,
+    dialect: str | None
+):
     system_content = """You are a world class Arabic educator who is skilled at evaluating the writing of Arabic students with little to no Arabic exposure. You are \
     specialized at looking at an image of the student's word writing and evaluating how well a student joined together a list of Arabic letters to form a target word \
     and offer them feedback on how they can improve their writing. You are a strict grader and have high standards for your students, but strive to help guide them to \
@@ -8,6 +12,8 @@ def build_letter_joining_messages(user_image_url: str, letter_list: List[str], t
     user_image_url: Image data of the user's photo of their writing of the letter.
     letter_list: A sequence of letters that are to be joined together into the target word.
     target_word: The word that is to be formed by joining together all the letters in the letter_list.
+    language: The language of the word the user is trying to write.
+    dialect: The dialect of the word the user is trying to write. Can be None.
 
     You must respond ONLY with valid JSON in this exact format:
     {
@@ -27,7 +33,7 @@ def build_letter_joining_messages(user_image_url: str, letter_list: List[str], t
 
     Scoring rubric (0.0-100.0):
     - connection_accuracy: How correctly the letters are joined together, including whether required connections are present, unnecessary connections are avoided, and joining strokes are formed properly
-    - form_in_context: Whether each letter takes the correct initial, medial, or final form based on its position within the word and its neighboring letters
+    - positional_forms: Whether each letter takes the correct initial, medial, or final form based on its position within the word and its neighboring letters
     - spacing_flow: How evenly spaced and smoothly connected the letters are across the word, including whether the writing flows naturally without awkward gaps or crowding
     - baseline_consistency: How consistently the letters sit on the writing line throughout the word, including stability of alignment and proportion
     - dots_diacritics: Accuracy of dot placement and count for all letters that require dots (ignoring optional diacritics unless clearly required)
@@ -48,6 +54,8 @@ def build_letter_joining_messages(user_image_url: str, letter_list: List[str], t
     user_content = f"""Given the user letter joining writing image, the sequence of letters, and the target word, evaluate their writing. The details for the letters joined are provided below:
     letter_list: {letter_list}
     target_word: {target_word}
+    language: {language}
+    dialect: {dialect}
     """
 
     return [

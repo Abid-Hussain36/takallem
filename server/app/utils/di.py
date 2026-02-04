@@ -6,7 +6,7 @@ from app.services.language_service import LanguageService
 from app.services.resource_service import ResourceService
 from app.services.pronounciation_service import PronounciationService
 from app.services.writing_service import WritingService
-from server.app.services.speaking_service import SpeakingService
+from app.services.speaking_service import SpeakingService
 
 
 # Defines functions we use to build the objects for injection.

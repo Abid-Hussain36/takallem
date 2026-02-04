@@ -2,15 +2,13 @@ from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 from sqlalchemy.orm.attributes import flag_modified
 from app.db.schemas.user_course_progress import UserCourseProgress
-from app.db.schemas.user import User
 from app.models.db.user.user_course_progress_response import UserCourseProgressResponse
 from app.models.general.success_message import SuccessMessage
-from app.db.enums import AvailableCourse, AvailableDialect
+from app.db.enums import AvailableCourse
 from app.models.db.user.user_course_progress_requests.create_user_course_progress_request import CreateUserCourseProgressRequest
 from app.models.db.user.user_course_progress_requests.update_user_course_progress_dialect_request import UpdateUserCourseProgressDialectRequest
-from app.models.db.user.user_course_progress_requests.add_covered_word_request import AddCoveredWordReqest
+from app.models.db.user.user_course_progress_requests.add_covered_word_request import AddCoveredWordRequest
 from app.models.db.user.user_course_progress_requests.increment_current_vocab_problem_set_request import IncrementCurrentVocabProblemSetRequest
-from app.models.db.user.user_course_progress_requests.add_covered_word_response import AddCoveredWordResponse
 
 
 class UserCourseProgressService:
@@ -113,7 +111,7 @@ class UserCourseProgressService:
         
         return progress.to_model()
 
-    def add_covered_word(self, db: Session, addCoveredWordRequest: AddCoveredWordReqest) -> UserCourseProgressResponse:
+    def add_covered_word(self, db: Session, addCoveredWordRequest: AddCoveredWordRequest) -> UserCourseProgressResponse:
         """Updates covered_words based on the logic specified"""
         id = addCoveredWordRequest.id
         word = addCoveredWordRequest.word
@@ -168,6 +166,8 @@ class UserCourseProgressService:
             )
         
         progress.covered_words = {}
+        flag_modified(progress, "covered_words") # Notifies Supabase that this JSONB field has changed and persists this change to the DB
+
         db.commit()
         db.refresh(progress)
         

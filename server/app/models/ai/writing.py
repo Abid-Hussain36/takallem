@@ -1,5 +1,7 @@
 from typing import Literal, List
 from pydantic import BaseModel
+from app.utils.enums import LetterPosition
+from app.db.enums import AvailableDialect, AvailableLanguage
 
 
 class WritingQAResponse(BaseModel):
@@ -56,4 +58,41 @@ class DictationResponse(BaseModel):
     feedback: str
     mistake_tags: List[str]
     performance_reflection: str
-    
+
+class WritingExplainInput(BaseModel):
+    query: str
+    language: AvailableLanguage
+    dialect: AvailableDialect | None
+    letter: str
+    position: LetterPosition | None
+    status: Literal["pass", "fail"]
+    scores: LetterHandwritingScores
+    previous_feedback: List[str]
+    mistake_tags: List[str]
+    performance_reflection: str
+
+class JoiningExplainInput(BaseModel):
+    query: str
+    language: AvailableLanguage
+    dialect: AvailableDialect | None
+    letter_list: List[str]
+    target_word: str
+    status: Literal["pass", "fail"]
+    scores: LetterJoiningScores
+    previous_feedback: List[str]
+    mistake_tags: List[str]
+    performance_reflection: str
+
+class DictationExplainInput(BaseModel):
+    query: str
+    language: AvailableLanguage
+    dialect: AvailableDialect | None
+    target_word: str
+    status: Literal["pass", "fail"]
+    scores: DictationScores
+    previous_feedback: List[str]
+    mistake_tags: List[str]
+    performance_reflection: str
+
+class WritingExplainResponse(BaseModel):
+    response: str

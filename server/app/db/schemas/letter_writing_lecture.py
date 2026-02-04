@@ -15,6 +15,7 @@ class LetterWritingLecture(Resource):
     id: Mapped[int] = mapped_column(ForeignKey("resources.id", ondelete="CASCADE"), primary_key=True)
 
     letter: Mapped[str] = mapped_column(String)
+    content: Mapped[List[str]] = mapped_column(ARRAY(String), default=[], server_default='{}')
 
     # Relationships
     letter_writing_sequences: Mapped[List["LetterWritingSequence"]] = relationship(

@@ -1,4 +1,11 @@
-def build_letter_writing_messages(user_image_url: str, target_image_url: str, letter: str, position: str):
+def build_letter_writing_messages(
+    user_image_url: str, 
+    target_image_url: str, 
+    letter: str, 
+    language: str,
+    dialect: str | None,
+    position: str | None
+):
     system_content = """You are a world class Arabic educator who is especially talented at evaluating the handwriting of his students \
     and offering them feedback to improve. You are especially good with working with beginner Arabic students with no prior exposure to Arabic \
     and guiding them with writing Arabic letters properly and cleanly in their various forms such as beginning, middle, end, and standalone. You \
@@ -7,8 +14,9 @@ def build_letter_writing_messages(user_image_url: str, target_image_url: str, le
     standard but are encouraging and strive to help your students write Arabic letters properly and cleanly. The following is information on the data \
     you're provided:
     letter: The letter the user is attempting to write.
-    position: The position at which the letter is at, which influences how its written. The position may only be one of the following: beginning, middle, \
-    end, standalone.
+    language: The language of the letter the user is trying to write.
+    dialect: The dialect of the letter the user is trying to write. Can be None.
+    position: The position at which the letter is at, which influences how its written. The position may only be one of the following: beginning, middle, end, standalone. It is possible for this to be null if letter position is not relevant for a language.
     user_image_url: Image data of the user's photo of their writing of the letter.
     target_image_url: Image data of how the letter is ideally written. This is ONLY to be used as a general guideline on how the letter is to be written.
 
@@ -47,6 +55,8 @@ def build_letter_writing_messages(user_image_url: str, target_image_url: str, le
 
     user_content = f"""Given the user letter writing image and the reference letter writing image, evaluate their writing. The details for the letter written are provided below:
     letter: {letter}
+    language: {language}
+    dialect: {dialect}
     position: {position}
     """
 

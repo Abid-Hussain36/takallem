@@ -9,9 +9,8 @@ from app.db.enums import AvailableCourse, AvailableDialect
 from app.utils.auth import get_current_user_email
 from app.models.db.user.user_course_progress_requests.create_user_course_progress_request import CreateUserCourseProgressRequest
 from app.models.db.user.user_course_progress_requests.update_user_course_progress_dialect_request import UpdateUserCourseProgressDialectRequest
-from app.models.db.user.user_course_progress_requests.add_covered_word_request import AddCoveredWordReqest
+from app.models.db.user.user_course_progress_requests.add_covered_word_request import AddCoveredWordRequest
 from app.models.db.user.user_course_progress_requests.increment_current_vocab_problem_set_request import IncrementCurrentVocabProblemSetRequest
-from app.models.db.user.user_course_progress_requests.add_covered_word_response import AddCoveredWordResponse
 
 
 user_course_progress_router = APIRouter()
@@ -66,7 +65,7 @@ def update_user_course_progress_dialect(
     return service.update_user_course_progress_dialect(db, updateUserCourseProgressDialect)
 
 
-@user_course_progress_router.put("/curr_module/increment/{id}", response_model=UserCourseProgressResponse)
+@user_course_progress_router.put("/curr-module/increment/{id}", response_model=UserCourseProgressResponse)
 def increment_curr_module(
     id: int,
     email: str = Depends(get_current_user_email),
@@ -77,9 +76,9 @@ def increment_curr_module(
     return service.increment_curr_module(db, id)
 
 
-@user_course_progress_router.put("/covered_words", response_model=UserCourseProgressResponse)
+@user_course_progress_router.put("/covered-words", response_model=UserCourseProgressResponse)
 def add_covered_word(
-    addCoveredWordRequest: AddCoveredWordReqest,
+    addCoveredWordRequest: AddCoveredWordRequest,
     email: str = Depends(get_current_user_email),
     db: Session = Depends(get_db),
     service: UserCourseProgressService = Depends(get_user_course_progress_service)
@@ -88,7 +87,7 @@ def add_covered_word(
     return service.add_covered_word(db, addCoveredWordRequest)
 
 
-@user_course_progress_router.put("/covered_words/clear/{id}", response_model=UserCourseProgressResponse)
+@user_course_progress_router.put("/covered-words/clear/{id}", response_model=UserCourseProgressResponse)
 def clear_covered_words(
     id: int,
     email: str = Depends(get_current_user_email),
@@ -99,7 +98,7 @@ def clear_covered_words(
     return service.clear_covered_words(db, id)
 
 
-@user_course_progress_router.put("/problem_counter/increment/{id}", response_model=UserCourseProgressResponse)
+@user_course_progress_router.put("/problem-counter/increment/{id}", response_model=UserCourseProgressResponse)
 def increment_problem_counter(
     id: int,
     email: str = Depends(get_current_user_email),
@@ -110,7 +109,7 @@ def increment_problem_counter(
     return service.increment_problem_counter(db, id)
 
 
-@user_course_progress_router.put("/problem_counter/clear/{id}", response_model=UserCourseProgressResponse)
+@user_course_progress_router.put("/problem-counter/clear/{id}", response_model=UserCourseProgressResponse)
 def clear_problem_counter(
     id: int,
     email: str = Depends(get_current_user_email),
@@ -121,7 +120,7 @@ def clear_problem_counter(
     return service.clear_problem_counter(db, id)
 
 
-@user_course_progress_router.put("/current_vocab_problem_set/increment", response_model=UserCourseProgressResponse)
+@user_course_progress_router.put("/current-vocab-problem-set/increment", response_model=UserCourseProgressResponse)
 def increment_current_vocab_problem_set(
     incrementCurrentVocabProblemSetRequest: IncrementCurrentVocabProblemSetRequest,
     email: str = Depends(get_current_user_email),
@@ -132,7 +131,7 @@ def increment_current_vocab_problem_set(
     return service.increment_current_vocab_problem_set(db, incrementCurrentVocabProblemSetRequest)
 
 
-@user_course_progress_router.put("/current_vocab_problem_set/clear/{id}", response_model=UserCourseProgressResponse)
+@user_course_progress_router.put("/current-vocab-problem-set/clear/{id}", response_model=UserCourseProgressResponse)
 def clear_current_vocab_problem_set(
     id: int,
     email: str = Depends(get_current_user_email),

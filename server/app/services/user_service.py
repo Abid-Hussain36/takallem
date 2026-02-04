@@ -126,9 +126,16 @@ class UserService:
         return user.to_model()
 
 
-    def clear_current_course(self, db: Session, email: str):
+    def clear_current_course(self, db: Session, email: str) -> UserResponse:
         """Clears the current user course"""
         user = db.query(User).filter(User.email == email).first()
+
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="User not found"
+            )
+
         user.current_course = None
         db.commit()
         db.refresh(user)

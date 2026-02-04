@@ -1,12 +1,11 @@
 from typing import List
 from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
-from app.models.voice_tutor.voice_tutor import PronounciationScores, SemanticEvaluation
 
 
-def build_voice_tutor_generate_feedback_messages(
+def build_generate_feedback_messages(
     status: str,
     language: str, 
-    dialect: str,
+    dialect: str | None,
     question: str,
     vocab_words: str,
     transcription: str,
@@ -15,6 +14,7 @@ def build_voice_tutor_generate_feedback_messages(
     overall: float,
     vocab_words_used: str,
     answer_makes_sense: bool,
+    grammatical_score: float,
     grammar_notes: str,
     sufficent_vocab_words_used: bool
 ) -> List[BaseMessage]:
@@ -28,17 +28,19 @@ def build_voice_tutor_generate_feedback_messages(
     question: The question that the user is trying to answer with their response.
     vocab_words: The list of vocab words that are expected to be used to answer the question. Not all words need to be used however.
     transcription: The user's response to the question.    
-    accuracy: A measure of pronunciation accuracy of the response. Accuracy indicates how closely the phonemes match a native speaker's pronunciation.
-    completeness: A measure of completeness of the response, determined by calculating the ratio of pronounced words in the user's response to the transcription of the response.
-    overall: Overall score that indicates the pronunciation quality of the user's response. This score is weighted aggregate of the AccuracyScore, CompletenessScore, and some other scores regarding how natural the speech sounds.
-    vocab_words_used: Is a list of the vocab words that the user used in their response.
+    accuracy: A measure of pronunciation accuracy of the response. Accuracy indicates how closely the phonemes match a native speaker's pronunciation. The score is between 0.0 and 100.0.
+    completeness: A measure of completeness of the response, determined by calculating the ratio of pronounced words in the user's response to the transcription of the response. The score is between 0.0 and 100.0.
+    overall: Overall score that indicates the pronunciation quality of the user's response. This score is weighted aggregate of the AccuracyScore, CompletenessScore, and some other scores regarding how natural the speech sounds. The score is between 0.0 and 100.0.
+    vocab_words_used: A list of the vocab_words that the user used in their response.
     answer_makes_sense: Whether the user's response is a sensible answer to the question asked.
+    grammatical_score: A score representing the grammatical accuracy of the student's response. The score is between 0.0 and 100.0.
     grammar_notes: Notes about the user's grammar in their response.
-    sufficent_vocab_words_used: Whether enough of the vocab words were used in the user's response. At least len(vocab_words) - 1 words must be used in the user's response to pass.
+    sufficent_vocab_words_used: Whether the user used enough of the vocab words in their response.
 
     You must respond ONLY with valid JSON in this exact format:
     {
-        "feedback_text": "Feedback on the user pronounciation."
+        "feedback_text": "Feedback on the user pronounciation.",
+        "performance_reflection": "A reflection on the user's response to the question."
     }
 
     Rules:
@@ -47,6 +49,7 @@ def build_voice_tutor_generate_feedback_messages(
     on their good pronounciation, briefly point out something they did well in their answer, and also briefly point out how they can improve their \
     pronounciation further if applicable. If the status if fail, you should provide the user comprehensive, honest, actionable, but encouraging feedback on \
     what mistakes they are making and what they can do to improve. The feedback must be at most 4 sentences long.
+    - performance_reflection must be a string that summarizes the user's answer and mistakes if applicable for other teachers to reference when trying to help the student.
     """.strip()
 
     human = f"""Given the following data regarding the quality of the user's response to the specified question, generate feedback for them to improve:
@@ -61,6 +64,7 @@ def build_voice_tutor_generate_feedback_messages(
     overall: {overall}
     vocab_words_used: {vocab_words_used}
     answer_makes_sense: {answer_makes_sense}
+    grammatical_score: {grammatical_score}
     grammar_notes: {grammar_notes}
     sufficent_vocab_words_used: {sufficent_vocab_words_used}
     """
