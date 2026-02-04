@@ -96,7 +96,6 @@ export default function Login() {
                     }
                   );
                   
-                  // IDK what do here for now
                   if(!clearUserCourseResponse.ok){
                     const errorData = await clearUserCourseResponse.json();
                     throw new Error(errorData.detail || "Error in clearing user course when progress not found.")

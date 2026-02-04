@@ -59,7 +59,6 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
           const userData = await response.json();
           setUser(userData);
 
-          // SET USER PROGRESS HERE!!!
 
           // We check if the user's currently taking a course and set the progress
           if(userData.current_course){

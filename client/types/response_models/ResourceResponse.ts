@@ -104,6 +104,27 @@ export interface DiscriminationProblemResponse {
     correct_answer: string;
 }
 
+export interface ReadingComprehensionMCQProblemResponse {
+    id: number;
+    problem_set_id: number;
+    question: string;
+    question_audio: string;
+    correct_answer: string;
+    answer_choices: string[];
+}
+
+export interface ReadingComprehensionWritingProblemResponse {
+    id: number;
+    problem_set_id: number;
+    question_audio: string;
+}
+
+export interface ReadingComprehensionTextResponse {
+    id: number;
+    text_title: string;
+    text: string[];
+}
+
 // Problem Set Responses
 export interface VocabReadingProblemSetResponse {
     id: number;
@@ -205,6 +226,22 @@ export interface DiscriminationProblemSetResponse extends BaseResource {
     problems: DiscriminationProblemResponse[];
 }
 
+export interface ReadingComprehensionMCQProblemSetResponse extends BaseResource {
+    resource_type: ResourceType.READING_COMPREHENSION_MCQ_PROBLEM_SET;
+    text_id: number;
+    problem_count: number;
+    problems: ReadingComprehensionMCQProblemResponse[];
+    text: ReadingComprehensionTextResponse;
+}
+
+export interface ReadingComprehensionWritingProblemSetResponse extends BaseResource {
+    resource_type: ResourceType.READING_COMPREHENSION_WRITING_PROBLEM_SET;
+    text_id: number;
+    problem_count: number;
+    problems: ReadingComprehensionWritingProblemResponse[];
+    text: ReadingComprehensionTextResponse;
+}
+
 export interface VocabReadingProblemSetsResponse extends BaseResource {
     resource_type: ResourceType.VOCAB_READING_PROBLEM_SETS;
     set_limit: number;
@@ -245,6 +282,8 @@ export type PolymorphicResource =
     | LetterJoiningProblemSetResponse
     | DictationProblemSetResponse
     | DiscriminationProblemSetResponse
+    | ReadingComprehensionMCQProblemSetResponse
+    | ReadingComprehensionWritingProblemSetResponse
     | VocabReadingProblemSetsResponse
     | VocabListeningProblemSetsResponse
     | VocabSpeakingProblemSetsResponse
