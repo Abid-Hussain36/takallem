@@ -18,13 +18,54 @@
 }
 
 .container.completed {
-  background: linear-gradient(135deg, rgba(67, 233, 123, 0.1) 0%, rgba(56, 249, 215, 0.1) 100%);
-  border-color: rgba(67, 233, 123, 0.3);
+  position: relative;
+  background: white;
+  border-color: transparent;
+}
+
+.container.completed::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(67, 233, 123, 0.3);
+  border-radius: 12px;
+  pointer-events: none;
 }
 
 .container.completed:hover {
-  border-color: #43e97b;
-  box-shadow: 0 4px 20px rgba(67, 233, 123, 0.2);
+  border-color: rgba(67, 233, 123, 0.5);
+  box-shadow: 0 4px 20px rgba(67, 233, 123, 0.15);
+}
+
+.container.locked {
+  position: relative;
+  background: white;
+  border-color: transparent;
+}
+
+.container.locked::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(156, 163, 175, 0.4);
+  border-radius: 12px;
+  pointer-events: none;
+}
+
+.container.disabled {
+  cursor: not-allowed;
+}
+
+.container.disabled:hover {
+  transform: none;
+  box-shadow: none;
+  border-color: transparent;
 }
 
 .content {
@@ -32,6 +73,8 @@
   align-items: center;
   gap: 1rem;
   flex: 1;
+  position: relative;
+  z-index: 1;
 }
 
 .number {
@@ -53,11 +96,19 @@
 }
 
 .indicator {
-  width: 32px;
-  height: 32px;
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-end;
+  gap: 1.25rem;
+  flex-shrink: 0;
+  position: relative;
+  z-index: 1;
+}
+
+.lectureIcon {
+  width: 24px;
+  height: 24px;
+  color: #667eea;
   flex-shrink: 0;
 }
 
@@ -75,6 +126,11 @@
   transform: scale(1.1);
 }
 
+.container.disabled:hover .circle {
+  border-color: #cbd5e0;
+  transform: none;
+}
+
 .checkmark {
   width: 32px;
   height: 32px;
@@ -82,6 +138,12 @@
   border-radius: 50%;
   padding: 6px;
   animation: scaleIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.lockIcon {
+  width: 24px;
+  height: 24px;
+  color: #9ca3af;
 }
 
 @keyframes scaleIn {

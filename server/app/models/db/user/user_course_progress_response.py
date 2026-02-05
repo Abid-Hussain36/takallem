@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import Dict
+from typing import Dict, List
 from app.db.enums import AvailableCourse, AvailableDialect, AvailableLanguage
 
 
@@ -10,6 +10,7 @@ class UserCourseProgressResponse(BaseModel):
     dialect: AvailableDialect | None = None
     default_dialect: AvailableDialect | None = None
     total_modules: int
+    ref_modules: List[int]
     curr_module: int
     covered_words: Dict[str, int]
     problem_counter: int

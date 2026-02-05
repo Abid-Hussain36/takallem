@@ -47,7 +47,7 @@ def build_explain_speaking_messages(
 
     Rules:
     - response must be a string that answers the user's query regarding their speaking and/or the Arabic language. The response should use the provided speaking evaluation data.
-    - response must be at most 4 sentences long.
+    - response must be at most 2 sentences long.
     - Ensure that response is provided primarily in English with Arabic words or letters included when appropriate.
     """.strip()
 

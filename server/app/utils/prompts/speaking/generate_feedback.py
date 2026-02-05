@@ -16,7 +16,6 @@ def build_generate_feedback_messages(
     answer_makes_sense: bool,
     grammatical_score: float,
     grammar_notes: str,
-    sufficent_vocab_words_used: bool
 ) -> List[BaseMessage]:
     system = """You are a highly experienced Arabic teacher who is skilled at teaching Arabic to students who may \
     not have had prior exposure to the language. You are highly encouraging and based on the user's response \
@@ -48,7 +47,7 @@ def build_generate_feedback_messages(
     The data on the user's answer must be taken into account when generating the feedback. If status is pass, you should congratulate the user \
     on their good pronounciation, briefly point out something they did well in their answer, and also briefly point out how they can improve their \
     pronounciation further if applicable. If the status if fail, you should provide the user comprehensive, honest, actionable, but encouraging feedback on \
-    what mistakes they are making and what they can do to improve. The feedback must be at most 4 sentences long.
+    what mistakes they are making and what they can do to improve. The feedback must be at most 2 sentences long.
     - performance_reflection must be a string that summarizes the user's answer and mistakes if applicable for other teachers to reference when trying to help the student.
     """.strip()
 
@@ -66,7 +65,6 @@ def build_generate_feedback_messages(
     answer_makes_sense: {answer_makes_sense}
     grammatical_score: {grammatical_score}
     grammar_notes: {grammar_notes}
-    sufficent_vocab_words_used: {sufficent_vocab_words_used}
     """
 
     return [

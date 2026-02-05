@@ -1,9 +1,9 @@
-import { AvailableDialect } from "../enums";
+import { AvailableDialect, AvailableLanguage } from "../enums";
 import { DictationScores } from "../response_models/LetterWritingResponse";
 
 export interface DictationExplainInput {
     query: string;
-    language: string;
+    language: AvailableLanguage;
     dialect: AvailableDialect | null;
     target_word: string;
     status: string;

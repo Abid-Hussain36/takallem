@@ -1,3 +1,4 @@
+from typing import List
 from pydantic import BaseModel
 from app.db.enums import AvailableCourse, AvailableDialect, AvailableLanguage
 
@@ -6,6 +7,7 @@ class CourseResponse(BaseModel):
     id: int
     course_name: AvailableCourse
     total_modules: int
+    ref_modules: List[int]
     image: str
     text_color: str
     default_dialect: AvailableDialect | None = None

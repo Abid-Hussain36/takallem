@@ -26,7 +26,7 @@ def build_semantic_eval_messages(
     IMPORTANT: You MUST respond with ONLY a JSON object in this exact format:
     {
         "vocab_words_used": ["list", "of", "words", "they", "used"],
-        "answer_makes_sense": True,
+        "answer_makes_sense": true,
         "grammatical_score": 85.0,
         "grammar_notes": "Comprehensive notes about their grammar",
     }

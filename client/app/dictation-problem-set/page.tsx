@@ -75,10 +75,17 @@ const DictationProblemSet = () => {
 
     // Initialize progress status when component mounts
     useEffect(() => {
-        const initialStatus: ProgressStatus[] = problems.map((_, idx) => 
-            idx === problemCounter ? 'current' : 'unanswered'
-        );
-        setProgressStatus(initialStatus);
+        const initialProgressStatus: ProgressStatus[] = problems.map((_, idx) => {
+            if(idx < problemCounter){
+                return "correct";
+            } else if(idx === problemCounter){
+                return "current";
+            } else{
+                return "unanswered"
+            }
+        });
+
+        setProgressStatus(initialProgressStatus);
     }, []);
 
     // Update current problem indicator and reset state when problem changes
@@ -331,6 +338,11 @@ const DictationProblemSet = () => {
 
     // Handle next button
     const handleNext = async () => {
+        // Prevent multiple clicks while loading
+        if (isLoading) {
+            return;
+        }
+
         const authToken = localStorage.getItem("token");
         if (!authToken) {
             setError("Authentication required. Please log in.");
@@ -359,24 +371,27 @@ const DictationProblemSet = () => {
                     throw new Error("Failed to reset problem counter");
                 }
 
-                // Increment current module
-                const incrementModuleResponse = await fetch(
-                    `${process.env.NEXT_PUBLIC_SERVER_URL}/user-course-progress/curr-module/increment/${userCourseProgress!.id}`,
-                    {
-                        method: "PUT",
-                        headers: {
-                            'Authorization': `Bearer ${authToken}`,
-                            'Content-Type': 'application/json'
+                // Increment current module ONLY if we're currently on this module
+                // This prevents double-increments if the user revisits this page
+                if (userCourseProgress!.curr_module === resource!.number) {
+                    const incrementModuleResponse = await fetch(
+                        `${process.env.NEXT_PUBLIC_SERVER_URL}/user-course-progress/curr-module/increment/${userCourseProgress!.id}`,
+                        {
+                            method: "PUT",
+                            headers: {
+                                'Authorization': `Bearer ${authToken}`,
+                                'Content-Type': 'application/json'
+                            }
                         }
+                    );
+
+                    if (!incrementModuleResponse.ok) {
+                        throw new Error("Failed to increment module");
                     }
-                );
 
-                if (!incrementModuleResponse.ok) {
-                    throw new Error("Failed to increment module");
+                    const updatedProgress = await incrementModuleResponse.json();
+                    setUserCourseProgress(updatedProgress);
                 }
-
-                const updatedProgress = await incrementModuleResponse.json();
-                setUserCourseProgress(updatedProgress);
 
                 // Navigate home
                 setResource(null);

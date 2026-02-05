@@ -6,4 +6,5 @@ export default interface CreateUserCourseProgressRequest {
   language: AvailableLanguage;
   default_dialect: AvailableDialect | null;
   total_modules: number;
+  ref_modules: number[];
 }

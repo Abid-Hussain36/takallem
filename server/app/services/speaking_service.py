@@ -23,7 +23,7 @@ class SpeakingService:
         # Setup GPT
         self.llm = ChatOpenAI(
             model=os.getenv("PRIMARY_MODEL"),
-            temperature=0.7,
+            temperature=1,
             api_key=os.getenv("OPENAI_API_KEY")
         )
 
@@ -244,13 +244,41 @@ class SpeakingService:
             )
 
             response = await self.llm.ainvoke(messages)
-            response_data = json.loads(response.content)
+            
+            # Debug logging
+            print(f"[DEBUG] Semantic eval response type: {type(response.content)}")
+            print(f"[DEBUG] Semantic eval response content: {response.content[:500] if response.content else 'EMPTY'}")
+            
+            # Clean up the response
+            content = response.content.strip()
+            
+            # Remove markdown code fences if present
+            if content.startswith('```'):
+                # Remove opening fence (```json or ```)
+                content = content.split('\n', 1)[1] if '\n' in content else content
+                # Remove closing fence (```)
+                if content.endswith('```'):
+                    content = content.rsplit('```', 1)[0]
+                content = content.strip()
+            
+            # Fix Python-style values to JSON-style
+            content = content.replace('True', 'true').replace('False', 'false').replace('None', 'null')
+            
+            # Try to parse JSON
+            try:
+                response_data = json.loads(content)
+            except json.JSONDecodeError as e:
+                print(f"[ERROR] JSON parsing failed. Raw content: {content}")
+                raise HTTPException(
+                    status_code=http_status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    detail=f"{function_code}: LLM returned invalid JSON: {str(e)}"
+                )
 
             semantic_evaluation = SemanticEvaluation(
-                vocab_words_used=response_data["vocab_words_used"],
-                answer_makes_sense=response_data["answer_makes_sense"],
-                grammatical_score=response_data["grammatical_score"],
-                grammar_notes=response_data["grammar_notes"],
+                vocab_words_used=response_data.get("vocab_words_used", []),
+                answer_makes_sense=response_data.get("answer_makes_sense", False),
+                grammatical_score=response_data.get("grammatical_score", 0),
+                grammar_notes=response_data.get("grammar_notes", ""),
             )
 
             return {
@@ -277,17 +305,14 @@ class SpeakingService:
             overall_pron_score = state.pronounciation_scores.overall
             grammatical_score = state.semantic_evaluation.grammatical_score
             answer_makes_sense = state.semantic_evaluation.answer_makes_sense
-            vocab_words_used_len = len(state.semantic_evaluation.vocab_words_used)
             
             # Thresholds
             overall_pron_score_threshold = 70.0
             grammatical_score_threshold = 70.0
-            min_vocab_words_used = max(len(state.vocab_words) - 1, 1)
 
             if(
                 overall_pron_score > overall_pron_score_threshold 
                 and grammatical_score > grammatical_score_threshold
-                and vocab_words_used_len >= min_vocab_words_used 
                 and answer_makes_sense
             ):
                 status = "pass"
@@ -302,7 +327,6 @@ class SpeakingService:
             completeness = state.pronounciation_scores.completeness
             overall = state.pronounciation_scores.overall
             grammar_notes = state.semantic_evaluation.grammar_notes
-            sufficent_vocab_words_used = vocab_words_used_len >= min_vocab_words_used
 
             messages = build_generate_feedback_messages(
                 status=status, 
@@ -318,14 +342,41 @@ class SpeakingService:
                 answer_makes_sense=answer_makes_sense,
                 grammatical_score=grammatical_score,
                 grammar_notes=grammar_notes,
-                sufficent_vocab_words_used=sufficent_vocab_words_used
             )
 
             response = await self.llm.ainvoke(messages)
-            response_data = json.loads(response.content)
+            
+            # Debug logging
+            print(f"[DEBUG] Generate feedback response type: {type(response.content)}")
+            print(f"[DEBUG] Generate feedback response content: {response.content[:500] if response.content else 'EMPTY'}")
+            
+            # Clean up the response
+            content = response.content.strip()
+            
+            # Remove markdown code fences if present
+            if content.startswith('```'):
+                # Remove opening fence (```json or ```)
+                content = content.split('\n', 1)[1] if '\n' in content else content
+                # Remove closing fence (```)
+                if content.endswith('```'):
+                    content = content.rsplit('```', 1)[0]
+                content = content.strip()
+            
+            # Fix Python-style values to JSON-style
+            content = content.replace('True', 'true').replace('False', 'false').replace('None', 'null')
+            
+            # Try to parse JSON
+            try:
+                response_data = json.loads(content)
+            except json.JSONDecodeError as e:
+                print(f"[ERROR] JSON parsing failed. Raw content: {content}")
+                raise HTTPException(
+                    status_code=http_status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    detail=f"{function_code}: LLM returned invalid JSON: {str(e)}"
+                )
 
-            feedback_text = response_data["feedback_text"]
-            performance_reflection = response_data["performance_reflection"]
+            feedback_text = response_data.get("feedback_text")
+            performance_reflection = response_data.get("performance_reflection")
 
             if not feedback_text:
                 raise HTTPException(
@@ -458,30 +509,40 @@ class SpeakingService:
     async def generate_response(self, input: VoiceTutorInput) -> VoiceTutorOutput:
         """Generates feedback on the user's speaking performance based on the question details."""
 
-        # 1. Creating the initial graph state
-        initial_state = VoiceTutorState(
-            question=input.question,
-            language=input.language,
-            dialect=input.dialect,
-            vocab_words=input.vocab_words,
-            user_audio_base64=input.user_audio_base64
-        )
+        try:
+            # 1. Creating the initial graph state
+            initial_state = VoiceTutorState(
+                question=input.question,
+                language=input.language,
+                dialect=input.dialect,
+                vocab_words=input.vocab_words,
+                user_audio_base64=input.user_audio_base64
+            )
 
-        # 2. Run workflow on initial state
-        final_state = await self.workflow.ainvoke(initial_state)
+            # 2. Run workflow on initial state
+            final_state = await self.workflow.ainvoke(initial_state)
 
-        # 3. Create and return the output object
-        output = VoiceTutorOutput(
-            transcription=final_state["transcription"],
-            pronounciation_scores=final_state["pronounciation_scores"],
-            semantic_evaluation=final_state["semantic_evaluation"],
-            status=final_state["status"],
-            performance_reflection=final_state["performance_reflection"],
-            feedback_text=final_state.get("feedback_text", None),
-            feedback_audio_base64=final_state.get("feedback_audio_base64", None)
-        )
+            # 3. Create and return the output object
+            output = VoiceTutorOutput(
+                transcription=final_state["transcription"],
+                pronounciation_scores=final_state["pronounciation_scores"],
+                semantic_evaluation=final_state["semantic_evaluation"],
+                status=final_state["status"],
+                performance_reflection=final_state["performance_reflection"],
+                feedback_text=final_state.get("feedback_text", None),
+                feedback_audio_base64=final_state.get("feedback_audio_base64", None)
+            )
 
-        return output
+            return output
+        
+        except Exception as e:
+            print(f"[ERROR] Speaking service generate_response failed: {type(e).__name__}: {str(e)}")
+            import traceback
+            traceback.print_exc()
+            raise HTTPException(
+                status_code=http_status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Failed to generate speaking response: {str(e)}"
+            )
 
 
     async def explain_response(self, input: VoiceTutorExplainInput) -> VoiceTutorExplainOutput:
@@ -532,8 +593,37 @@ class SpeakingService:
             )
 
             response = await self.llm.ainvoke(messages)
-            response_data = json.loads(response.content)
-            response_text = response_data["response_text"]
+            
+            # Debug logging
+            print(f"[DEBUG] Explain response type: {type(response.content)}")
+            print(f"[DEBUG] Explain response content: {response.content[:500] if response.content else 'EMPTY'}")
+            
+            # Clean up the response
+            content = response.content.strip()
+            
+            # Remove markdown code fences if present
+            if content.startswith('```'):
+                # Remove opening fence (```json or ```)
+                content = content.split('\n', 1)[1] if '\n' in content else content
+                # Remove closing fence (```)
+                if content.endswith('```'):
+                    content = content.rsplit('```', 1)[0]
+                content = content.strip()
+            
+            # Fix Python-style values to JSON-style
+            content = content.replace('True', 'true').replace('False', 'false').replace('None', 'null')
+            
+            # Try to parse JSON
+            try:
+                response_data = json.loads(content)
+            except json.JSONDecodeError as e:
+                print(f"[ERROR] JSON parsing failed. Raw content: {content}")
+                raise HTTPException(
+                    status_code=http_status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    detail=f"LLM returned invalid JSON: {str(e)}"
+                )
+            
+            response_text = response_data.get("response_text")
 
             if not response_text:
                 raise HTTPException(

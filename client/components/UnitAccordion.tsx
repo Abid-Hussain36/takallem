@@ -10,13 +10,15 @@ interface UnitAccordionProps {
   unitTitle: string;
   sections: { [sectionTitle: string]: ModuleResponse[] };
   currentModule: number;
+  refModules: Set<number> | null;
   onModuleClick: (module: ModuleResponse) => void;
 }
 
-const UnitAccordion = ({ unitNumber, unitTitle, sections, currentModule, onModuleClick }: UnitAccordionProps) => {
-  const [isOpen, setIsOpen] = useState(false);
-
+const UnitAccordion = ({ unitNumber, unitTitle, sections, currentModule, refModules, onModuleClick }: UnitAccordionProps) => {
   const allModules = Object.values(sections).flat();
+  const containsCurrentModule = allModules.some(m => m.number === currentModule);
+  const [isOpen, setIsOpen] = useState(containsCurrentModule);
+
   const completedCount = allModules.filter(m => m.number < currentModule).length;
   const totalCount = allModules.length;
 
@@ -54,6 +56,7 @@ const UnitAccordion = ({ unitNumber, unitTitle, sections, currentModule, onModul
               sectionTitle={sectionTitle}
               modules={sectionModules}
               currentModule={currentModule}
+              refModules={refModules}
               onModuleClick={onModuleClick}
             />
           ))}

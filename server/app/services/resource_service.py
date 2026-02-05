@@ -1,10 +1,7 @@
 from fastapi import HTTPException, status
-from sqlalchemy.orm import Session, selectinload, joinedload
-from app.models.db.general_resource.resource_response import ResourceResponse
+from sqlalchemy.orm import Session, selectinload
 from app.db.schemas.resource import Resource
-from app.db.enums import ResourceType
 from app.models.db.general_resource.polymorphic_resource_response import PolymorphicResource
-from app.utils.resource_map import RESOURCE_TYPE_TO_CLASS
 
 
 class ResourceService:

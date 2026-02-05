@@ -34,6 +34,11 @@ const InfoLecture = () => {
     }
 
     const handleNext = async () => {
+        // Prevent multiple clicks while loading
+        if (isLoading) {
+            return;
+        }
+
         const authToken = localStorage.getItem("token");
 
         if (!authToken) {
@@ -46,6 +51,8 @@ const InfoLecture = () => {
             return;
         }
 
+        // Increment current module ONLY if we're currently on this module
+        // This prevents double-increments if the user revisits this page
         if(userCourseProgress!.curr_module === resource.number){
             try {
                 setIsLoading(true);

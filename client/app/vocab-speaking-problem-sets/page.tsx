@@ -3,6 +3,7 @@
 import { useResource } from "@/context/ResourceContext"
 import { useUser } from "@/context/UserContext";
 import { useUserCourseProgress } from "@/context/UserCourseProgressContext";
+import { useModules } from "@/context/ModulesContext";
 import { VoiceTutorInput } from "@/types/request_models/VoiceTutorInput";
 import { VocabSpeakingProblemSetResponse, VocabSpeakingProblemSetsResponse, VocabWordResponse } from "@/types/response_models/ResourceResponse";
 import { VoiceTutorOutput } from "@/types/response_models/VoiceTutorOutput";
@@ -14,6 +15,7 @@ import { VoiceTutorTTSInput } from "@/types/request_models/VoiceTutorTTSInput";
 import { VoiceTutorTTSOutput } from "@/types/response_models/VoiceTutorTTSOutput";
 import { VoiceTutorExplainInput } from "@/types/request_models/VoiceTutorExplainInput";
 import { VoiceTutorExplainOutput } from "@/types/response_models/VoiceTutorExplainOutput";
+import { isAuthError, handleAuthError } from "@/utils/auth";
 
 type ProgressStatus = 'unanswered' | 'current' | 'correct';
 type AudioMode = 'listen' | 'record';
@@ -24,9 +26,10 @@ const VocabSpeakingProblemSets = () => {
     const router = useRouter();
 
     // Contexts
-    const {user} = useUser();
+    const {user, setUser} = useUser();
     const {userCourseProgress, setUserCourseProgress} = useUserCourseProgress();
     const {resource, setResource} = useResource();
+    const {setModules} = useModules();
     
     // Util States
     const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -41,6 +44,7 @@ const VocabSpeakingProblemSets = () => {
 
     // Audio Refs
     const playAudioRef = useRef<HTMLAudioElement | null>(null);
+    const audioCache = useRef<Record<string, string>>({});
 
     // Audio Boolean States
     const [isRecording, setIsRecording] = useState<boolean>(false);
@@ -132,6 +136,7 @@ const VocabSpeakingProblemSets = () => {
 
         return () => {
             audioPlayer?.removeEventListener("ended", handlePlayAudioEnd);
+            audioCache.current = {};
         }
     }, []);
 
@@ -273,6 +278,13 @@ const VocabSpeakingProblemSets = () => {
 
             if(!generatedResponse.ok){
                 const errorData = await generatedResponse.json();
+                
+                // Check if it's an auth error
+                if (generatedResponse.status === 401 || generatedResponse.status === 403 || isAuthError(errorData)) {
+                    handleAuthError(router, { setUser, setUserCourseProgress, setModules, setResource });
+                    return;
+                }
+                
                 throw new Error(errorData.detail || "Failed to generate feedback response");
             }
 
@@ -312,6 +324,11 @@ const VocabSpeakingProblemSets = () => {
                 }
             }
         } catch(err){
+            // Check if it's an auth error in the catch block
+            if (err instanceof Error && isAuthError(err)) {
+                handleAuthError(router, { setUser, setUserCourseProgress, setModules, setResource });
+                return;
+            }
             setError(err instanceof Error ? err.message : "Failed to generate feedback response");
         } finally{
             setIsLoading(false);
@@ -375,6 +392,13 @@ const VocabSpeakingProblemSets = () => {
 
             if(!explainResponse.ok){
                 const errorData = await explainResponse.json();
+                
+                // Check if it's an auth error
+                if (explainResponse.status === 401 || explainResponse.status === 403 || isAuthError(errorData)) {
+                    handleAuthError(router, { setUser, setUserCourseProgress, setModules, setResource });
+                    return;
+                }
+                
                 throw new Error(errorData.detail || "Failed to generate explain response");
             }
 
@@ -397,6 +421,11 @@ const VocabSpeakingProblemSets = () => {
             // 4. Play the explain response audio
             playAudio(responseText);
         } catch(err){
+            // Check if it's an auth error in the catch block
+            if (err instanceof Error && isAuthError(err)) {
+                handleAuthError(router, { setUser, setUserCourseProgress, setModules, setResource });
+                return;
+            }
             setError(err instanceof Error ? err.message : "Failed to generate explain");
         } finally{
             setIsLoading(false);
@@ -449,6 +478,11 @@ const VocabSpeakingProblemSets = () => {
                 const result = await incrementProblemCounterResponse.json();
                 setUserCourseProgress(result);
             } catch(err){
+                // Check if it's an auth error in the catch block
+                if (err instanceof Error && isAuthError(err)) {
+                    handleAuthError(router, { setUser, setUserCourseProgress, setModules, setResource });
+                    return;
+                }
                 setError(err instanceof Error ? err.message : "Failed to increment problem counter")
             } finally{
                 setIsLoading(false);
@@ -461,6 +495,11 @@ const VocabSpeakingProblemSets = () => {
 
 
     const handleNext = async () => {
+        // Prevent multiple clicks while loading
+        if (isLoading) {
+            return;
+        }
+
         // Handles going to the next problem or completing the exercise.
         const authToken = localStorage.getItem("token");
         if (!authToken) {
@@ -490,7 +529,8 @@ const VocabSpeakingProblemSets = () => {
 
                 let result = await resetProblemCounterResponse.json();
                 
-                // 2. Update current module if applicable
+                // 2. Increment current module ONLY if we're currently on this module
+                // This prevents double-increments if the user revisits this page
                 if(userCourseProgress!.curr_module === resource.number){
                     const incrementCurrModuleResponse = await fetch(
                         `${process.env.NEXT_PUBLIC_SERVER_URL}/user-course-progress/curr-module/increment/${userCourseProgress!.id}`,
@@ -514,6 +554,11 @@ const VocabSpeakingProblemSets = () => {
                 setResource(null);
                 router.replace("/");
             } catch(err){
+                // Check if it's an auth error in the catch block
+                if (err instanceof Error && isAuthError(err)) {
+                    handleAuthError(router, { setUser, setUserCourseProgress, setModules, setResource });
+                    return;
+                }
                 setError(err instanceof Error ? err.message : "Error completing module")
             } finally{
                 setIsLoading(false);
@@ -541,6 +586,11 @@ const VocabSpeakingProblemSets = () => {
                 setUserCourseProgress(result);
                 setPassed(false);
             } catch(err){
+                // Check if it's an auth error in the catch block
+                if (err instanceof Error && isAuthError(err)) {
+                    handleAuthError(router, { setUser, setUserCourseProgress, setModules, setResource });
+                    return;
+                }
                 setError(err instanceof Error ? err.message : "Failed to increment problem counter");
             } finally{
                 setIsLoading(false);
@@ -550,60 +600,95 @@ const VocabSpeakingProblemSets = () => {
 
 
     const playAudio = async(text: string) => {
-        // Plays the passed in audio
-        const authToken = localStorage.getItem("token");
-        if (!authToken) {
-            setError("Authentication required. Please log in.");
-            router.replace("/login");
-            return;
-        }
+        if(text in audioCache.current){
+            // If we already have generated audio for the text, we fetch and play it
+            const audioBase64 = audioCache.current[text];
 
-        setIsPlayingAudio(true);
-        setIsLoading(true);
-
-        try{
-            const requestBody: VoiceTutorTTSInput = {
-                text: text
-            }
-
-            const speakResponse = await fetch(
-                `${process.env.NEXT_PUBLIC_SERVER_URL}/speaking/speak-question`,
-                {
-                    method: "POST",
-                    headers: {
-                        "Authorization": `Bearer ${authToken}`,
-                        "Content-Type": "application/json"
-                    },
-                    body: JSON.stringify(requestBody)
-                }
-            );
-
-            if(!speakResponse.ok){
-                const errorData = await speakResponse.json();
-                throw new Error(errorData.detail || "Failed to get audio")
-            }
-
-            const speakData: VoiceTutorTTSOutput = await speakResponse.json();
-            
-            if(playAudioRef.current && speakData.response_audio_base64){
+            if(playAudioRef.current && audioBase64){
                 const audio = playAudioRef.current;
 
                 // We make sure to pause the previous audio if present and reset to the beginning of the audio file
                 audio.pause();
                 audio.currentTime = 0;
 
-                audio.src = speakData.response_audio_base64;
+                audio.src = audioBase64;
                 try{
                     await audio.play();
                 } catch(err){
                     setIsPlayingAudio(false);
                 }
             }
-        } catch(err){
-            setError(err instanceof Error ? err.message : "Failed to get and play audio");
-        } finally{
-            setIsLoading(false);
+        } else{
+            // Else, we generate the audio for the text with ElevenLabs
+            const authToken = localStorage.getItem("token");
+            if (!authToken) {
+                setError("Authentication required. Please log in.");
+                router.replace("/login");
+                return;
+            }
+
+            setIsPlayingAudio(true);
+            setIsLoading(true);
+
+            try{
+                const requestBody: VoiceTutorTTSInput = {
+                    text: text
+                }
+
+                const speakResponse = await fetch(
+                    `${process.env.NEXT_PUBLIC_SERVER_URL}/speaking/speak-question`,
+                    {
+                        method: "POST",
+                        headers: {
+                            "Authorization": `Bearer ${authToken}`,
+                            "Content-Type": "application/json"
+                        },
+                        body: JSON.stringify(requestBody)
+                    }
+                );
+
+                if(!speakResponse.ok){
+                    const errorData = await speakResponse.json();
+                    
+                    // Check if it's an auth error
+                    if (speakResponse.status === 401 || speakResponse.status === 403 || isAuthError(errorData)) {
+                        handleAuthError(router, { setUser, setUserCourseProgress, setModules, setResource });
+                        return;
+                    }
+                    
+                    throw new Error(errorData.detail || "Failed to get audio")
+                }
+
+                const speakData: VoiceTutorTTSOutput = await speakResponse.json();
+                
+                if(playAudioRef.current && speakData.response_audio_base64){
+                    audioCache.current[text] = speakData.response_audio_base64;
+                    const audio = playAudioRef.current;
+
+                    // We make sure to pause the previous audio if present and reset to the beginning of the audio file
+                    audio.pause();
+                    audio.currentTime = 0;
+
+                    audio.src = speakData.response_audio_base64;
+                    try{
+                        await audio.play();
+                    } catch(err){
+                        setIsPlayingAudio(false);
+                    }
+                }
+            } catch(err){
+                // Check if it's an auth error in the catch block
+                if (err instanceof Error && isAuthError(err)) {
+                    handleAuthError(router, { setUser, setUserCourseProgress, setModules, setResource });
+                    return;
+                }
+                setError(err instanceof Error ? err.message : "Failed to get and play audio");
+            } finally{
+                setIsLoading(false);
+            }
         }
+
+        
     }
 
 

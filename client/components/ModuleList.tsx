@@ -7,10 +7,11 @@ import styles from './ModuleList.module.css';
 interface ModuleListProps {
   modules: ModuleResponse[];
   currentModule: number;
+  refModules: Set<number> | null;
   onModuleClick: (module: ModuleResponse) => void;
 }
 
-const ModuleList = ({ modules, currentModule, onModuleClick }: ModuleListProps) => {
+const ModuleList = ({ modules, currentModule, refModules, onModuleClick }: ModuleListProps) => {
   // Group modules by unit, then by section
   const organizedModules = modules.reduce((acc, module) => {
     const unitKey = module.unit;
@@ -45,6 +46,7 @@ const ModuleList = ({ modules, currentModule, onModuleClick }: ModuleListProps) 
             unitTitle={unit}
             sections={organizedModules[unit]}
             currentModule={currentModule}
+            refModules={refModules}
             onModuleClick={onModuleClick}
           />
         );

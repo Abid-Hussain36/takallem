@@ -4,6 +4,7 @@ export interface CourseResponse {
     id: number;
     course_name: AvailableCourse;
     total_modules: number;
+    ref_modules: number[];
     image: string;
     text_color: string;
     default_dialect: AvailableDialect | null;

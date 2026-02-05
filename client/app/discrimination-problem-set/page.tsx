@@ -66,10 +66,17 @@ const DiscriminationProblemSet = () => {
 
     // Initialize progress status when component mounts
     useEffect(() => {
-        const initialStatus: ProgressStatus[] = problems.map((_, idx) => 
-            idx === problemCounter ? 'current' : 'unanswered'
-        );
-        setProgressStatus(initialStatus);
+        const initialProgressStatus: ProgressStatus[] = problems.map((_, idx) => {
+            if(idx < problemCounter){
+                return "correct";
+            } else if(idx === problemCounter){
+                return "current";
+            } else{
+                return "unanswered"
+            }
+        });
+
+        setProgressStatus(initialProgressStatus);
     }, []);
 
     // Update current problem indicator
@@ -165,6 +172,11 @@ const DiscriminationProblemSet = () => {
     }
 
     const handleNext = async() => {
+        // Prevent multiple clicks while loading
+        if (isLoading) {
+            return;
+        }
+
         const authToken = localStorage.getItem("token");
         if (!authToken) {
             setError("Authentication required. Please log in.");
@@ -193,7 +205,8 @@ const DiscriminationProblemSet = () => {
                     throw new Error(errorData.detail || "Failed to reset problem counter")
                 }
 
-                // Increment current module if this is the current module
+                // Increment current module ONLY if we're currently on this module
+                // This prevents double-increments if the user revisits this page
                 if(userCourseProgress!.curr_module === resource!.number){
                     const incrementUserCourseProgress = await fetch(
                         `${process.env.NEXT_PUBLIC_SERVER_URL}/user-course-progress/curr-module/increment/${userCourseProgress!.id}`,

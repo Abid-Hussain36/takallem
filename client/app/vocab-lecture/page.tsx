@@ -59,19 +59,26 @@ const VocabLecture = () => {
     }
 
     const handleNext = async () => {
+        // Prevent multiple clicks while loading
+        if (isLoading) {
+            return;
+        }
+
+        const authToken = localStorage.getItem("token");
+
+        if (!authToken) {
+            setError("User is not authenticated");
+            setUser(null);
+            setUserCourseProgress(null);
+            setModules(null);
+            setResource(null);
+            router.replace("/login");
+            return;
+        }
+
+        // Increment current module ONLY if we're currently on this module
+        // This prevents double-increments if the user revisits this page
         if(userCourseProgress?.curr_module === resource.number){
-            const authToken = localStorage.getItem("token");
-
-            if (!authToken) {
-                setError("User is not authenticated");
-                setUser(null);
-                setUserCourseProgress(null);
-                setModules(null);
-                setResource(null);
-                router.replace("/login");
-                return;
-            }
-
             try {
                 setIsLoading(true);
 

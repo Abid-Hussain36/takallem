@@ -153,9 +153,20 @@ const VocabReadingProblemSets = () => {
     }
 
     const handleNext = async () => {
+        // Prevent multiple clicks while loading
+        if (isLoading) {
+            return;
+        }
+
         if(atSetEnd && exerciseComplete){
             // We have finished the exercise
             const authToken = localStorage.getItem("token");
+
+            if (!authToken) {
+                setError("User is not authenticated");
+                router.replace("/login");
+                return;
+            }
 
             try {
                 setIsLoading(true);
@@ -211,7 +222,8 @@ const VocabReadingProblemSets = () => {
                     throw new Error(errorData.detail || "Failed to reset set counter")
                 }
 
-                // 4. Increment current module if necessary
+                // 4. Increment current module ONLY if we're currently on this module
+                // This prevents double-increments if the user revisits this page
                 if(userCourseProgress?.curr_module === resource.number){
                     const incrementUserCourseProgress = await fetch(
                         `${process.env.NEXT_PUBLIC_SERVER_URL}/user-course-progress/curr-module/increment/${userCourseProgress.id}`,
@@ -235,7 +247,7 @@ const VocabReadingProblemSets = () => {
                     setResource(null);
                     router.replace("/");
                 } else {
-                    // If we didn't increment module, update with the cleared progress from the last response
+                    // If we're past this module already, don't increment - just clear and go home
                     const finalProgress = await clearSetCounterResponse.json();
                     setUserCourseProgress(finalProgress);
 
@@ -250,6 +262,12 @@ const VocabReadingProblemSets = () => {
         } else if(atSetEnd && !exerciseComplete) {
             // We haven't finished the exercise but need to get the next problem set
             const authToken = localStorage.getItem("token");
+
+            if (!authToken) {
+                setError("User is not authenticated");
+                router.replace("/login");
+                return;
+            }
 
             try{
                 setIsLoading(true);

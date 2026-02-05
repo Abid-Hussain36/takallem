@@ -75,7 +75,7 @@ const DialectSelection = () => {
 
                 // 2. Set user dialect
                 const setUserDialectResponse = await fetch(
-                    `${process.env.NEXT_PUBLIC_SERVER_URL}/user/current-dialect/${dialect.dialect}`,
+                    `${process.env.NEXT_PUBLIC_SERVER_URL}/user/current-dialect/update/${dialect.dialect}`,
                     {
                         method: "PUT",
                         headers: {

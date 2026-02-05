@@ -29,7 +29,7 @@ import { useModules } from "@/context/ModulesContext";
 
 const Resource = () => {
     const params = useParams();
-    const resourceId = params.id;
+    const resourceId = params.id ? Number(params.id) : 0;
 
     const {setUser} = useUser();
     const {setUserCourseProgress} = useUserCourseProgress();
@@ -42,15 +42,15 @@ const Resource = () => {
     const router = useRouter();
 
     useEffect(() => {
+        // Early return if resourceId is not available yet (0 means not loaded)
+        if (!resourceId || resourceId === 0) {
+            return;
+        }
+
         const getResource = async () => {
             const authToken = localStorage.getItem("token");
 
             if (!authToken) {
-                setError("User is not authenticated");
-                setUser(null);
-                setUserCourseProgress(null);
-                setModules(null);
-                setResource(null);
                 router.replace("/login");
                 return;
             }
@@ -87,7 +87,7 @@ const Resource = () => {
         }
 
         getResource();
-    }, [resource])
+    }, [resourceId, router])
 
     // Render appropriate component based on resource type
     const renderResourcePage = () => {

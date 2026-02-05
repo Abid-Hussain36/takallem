@@ -62,7 +62,7 @@ const CourseSelection = () => {
 
       // 1. Updating the user's current course
       const userCourseUpdateResponse = await fetch(
-      `${process.env.NEXT_PUBLIC_SERVER_URL}/user/current-course/${course.course_name}`,
+      `${process.env.NEXT_PUBLIC_SERVER_URL}/user/current-course/update/${course.course_name}`,
         {
           method: "PUT",
           headers: {
@@ -100,7 +100,8 @@ const CourseSelection = () => {
         course: course.course_name,
         language: course.language,
         default_dialect: course.default_dialect, 
-        total_modules: course.total_modules
+        total_modules: course.total_modules,
+        ref_modules: course.ref_modules
       };
 
       const createUserCourseProgressResponse = await fetch(

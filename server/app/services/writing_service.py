@@ -161,6 +161,9 @@ class WritingService:
         user_image_format = user_image.content_type or "image/jpeg"
         user_image_url = f"data:{user_image_format};base64,{user_image_base64}"
 
+        print(f"Image Format: {user_image_format}")
+        print(f"Image b64 Len: {len(user_image_base64)}")
+
         # 3. Determining if the image is actually suitable for evaluation
         qa_messages = build_letter_writing_qa_messages(user_image_url)
 

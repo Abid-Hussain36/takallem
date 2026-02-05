@@ -1,3 +1,4 @@
+from typing import List
 from pydantic import BaseModel
 from app.db.enums import AvailableCourse, AvailableDialect, AvailableLanguage
 
@@ -8,3 +9,4 @@ class CreateUserCourseProgressRequest(BaseModel):
     language: AvailableLanguage
     default_dialect: AvailableDialect | None
     total_modules: int
+    ref_modules: List[int]

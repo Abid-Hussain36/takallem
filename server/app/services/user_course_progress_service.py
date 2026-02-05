@@ -43,6 +43,7 @@ class UserCourseProgressService:
         language = createUserCourseProgressRequest.language
         default_dialect = createUserCourseProgressRequest.default_dialect
         total_modules = createUserCourseProgressRequest.total_modules
+        ref_modules = createUserCourseProgressRequest.ref_modules
 
         # Check if the course already exists in progress for user
         existing = db.query(UserCourseProgress).filter(
@@ -63,6 +64,7 @@ class UserCourseProgressService:
             dialect=None,
             default_dialect=default_dialect,
             total_modules=total_modules,
+            ref_modules=ref_modules,
             curr_module=1,
             covered_words={},
             problem_counter=0,

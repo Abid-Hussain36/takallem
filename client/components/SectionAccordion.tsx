@@ -9,11 +9,13 @@ interface SectionAccordionProps {
   sectionTitle: string;
   modules: ModuleResponse[];
   currentModule: number;
+  refModules: Set<number> | null;
   onModuleClick: (module: ModuleResponse) => void;
 }
 
-const SectionAccordion = ({ sectionTitle, modules, currentModule, onModuleClick }: SectionAccordionProps) => {
-  const [isOpen, setIsOpen] = useState(false);
+const SectionAccordion = ({ sectionTitle, modules, currentModule, refModules, onModuleClick }: SectionAccordionProps) => {
+  const containsCurrentModule = modules.some(m => m.number === currentModule);
+  const [isOpen, setIsOpen] = useState(containsCurrentModule);
 
   const completedCount = modules.filter(m => m.number < currentModule).length;
   const totalCount = modules.length;
@@ -48,7 +50,8 @@ const SectionAccordion = ({ sectionTitle, modules, currentModule, onModuleClick 
               key={module.id}
               title={module.title}
               number={module.number}
-              isCompleted={module.number < currentModule}
+              currentModule={currentModule}
+              refModules={refModules}
               onClick={() => onModuleClick(module)}
             />
           ))}

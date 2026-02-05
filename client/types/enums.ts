@@ -25,6 +25,14 @@ export enum AvailableCourse {
 }
 
 
+export enum LetterPosition {
+    BEGINNING = "beginning",
+    MIDDLE = "middle",
+    END = "end",
+    STANDALONE = "standalone"
+}
+
+
 export enum ResourceType {
     // Lecture Types
     LETTER_SPEAKING_LECTURE = "Letter Speaking Lecture",

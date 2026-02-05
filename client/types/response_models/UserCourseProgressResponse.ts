@@ -7,6 +7,7 @@ export interface UserCourseProgressResponse {
     dialect: AvailableDialect | null;
     default_dialect: AvailableDialect | null;
     total_modules: number;
+    ref_modules: number[];
     curr_module: number;
     covered_words: Record<string, number>;
     problem_counter: number;

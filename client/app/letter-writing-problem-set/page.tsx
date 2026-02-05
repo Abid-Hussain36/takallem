@@ -71,10 +71,17 @@ const LetterWritingProblemSet = () => {
 
     // Initialize progress status when component mounts
     useEffect(() => {
-        const initialStatus: ProgressStatus[] = problems.map((_, idx) => 
-            idx === problemCounter ? 'current' : 'unanswered'
-        );
-        setProgressStatus(initialStatus);
+        const initialProgressStatus: ProgressStatus[] = problems.map((_, idx) => {
+            if(idx < problemCounter){
+                return "correct";
+            } else if(idx === problemCounter){
+                return "current";
+            } else{
+                return "unanswered"
+            }
+        });
+
+        setProgressStatus(initialProgressStatus);
     }, []);
 
     // Update current problem indicator and reset state when problem changes
@@ -166,10 +173,11 @@ const LetterWritingProblemSet = () => {
             formData.append('target_image', referenceFile);
             
             formData.append('letter', problem.letter);
-            formData.append('position', problem.position);
-            formData.append('language', userCourseProgress!.language);
+            // Convert position to lowercase to match backend enum (database has "Standalone", backend expects "standalone")
+            formData.append('position', problem.position.toLowerCase());
+            formData.append('language', String(userCourseProgress!.language));
             if (userCourseProgress!.dialect) {
-                formData.append('dialect', userCourseProgress!.dialect);
+                formData.append('dialect', String(userCourseProgress!.dialect));
             }
 
             const response = await fetch(
@@ -248,7 +256,7 @@ const LetterWritingProblemSet = () => {
                 language: userCourseProgress!.language,
                 dialect: userCourseProgress?.dialect ?? null,
                 letter: problem.letter,
-                position: problem.position,
+                position: problem.position.toLowerCase(),
                 status: writingResponse.status,
                 scores: writingResponse.scores,
                 previous_feedback: feedback,
@@ -292,6 +300,11 @@ const LetterWritingProblemSet = () => {
 
     // Handle next button
     const handleNext = async () => {
+        // Prevent multiple clicks while loading
+        if (isLoading) {
+            return;
+        }
+
         const authToken = localStorage.getItem("token");
         if (!authToken) {
             setError("Authentication required. Please log in.");
@@ -320,24 +333,27 @@ const LetterWritingProblemSet = () => {
                     throw new Error("Failed to reset problem counter");
                 }
 
-                // Increment current module
-                const incrementModuleResponse = await fetch(
-                    `${process.env.NEXT_PUBLIC_SERVER_URL}/user-course-progress/curr-module/increment/${userCourseProgress!.id}`,
-                    {
-                        method: "PUT",
-                        headers: {
-                            'Authorization': `Bearer ${authToken}`,
-                            'Content-Type': 'application/json'
+                // Increment current module ONLY if we're currently on this module
+                // This prevents double-increments if the user revisits this page
+                if (userCourseProgress!.curr_module === resource!.number) {
+                    const incrementModuleResponse = await fetch(
+                        `${process.env.NEXT_PUBLIC_SERVER_URL}/user-course-progress/curr-module/increment/${userCourseProgress!.id}`,
+                        {
+                            method: "PUT",
+                            headers: {
+                                'Authorization': `Bearer ${authToken}`,
+                                'Content-Type': 'application/json'
+                            }
                         }
+                    );
+
+                    if (!incrementModuleResponse.ok) {
+                        throw new Error("Failed to increment module");
                     }
-                );
 
-                if (!incrementModuleResponse.ok) {
-                    throw new Error("Failed to increment module");
+                    const updatedProgress = await incrementModuleResponse.json();
+                    setUserCourseProgress(updatedProgress);
                 }
-
-                const updatedProgress = await incrementModuleResponse.json();
-                setUserCourseProgress(updatedProgress);
 
                 // Navigate home
                 setResource(null);
@@ -512,64 +528,24 @@ const LetterWritingProblemSet = () => {
                 {/* Feedback Section */}
                 {showFeedback && writingResponse && (
                     <div className={styles.feedbackSection}>
-                        <div className={styles.feedbackHeader}>
-                            <h2 className={styles.feedbackTitle}>AI Feedback</h2>
-                            <span className={`${styles.statusBadge} ${styles[writingResponse.status]}`}>
+                        <div className={styles.feedbackTitle}>
+                            <span className={`${styles.statusBadge} ${writingResponse.status === 'pass' ? styles.pass : styles.fail}`}>
                                 {writingResponse.status === 'pass' ? (
                                     <>
                                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                                         </svg>
                                         Passed
                                     </>
                                 ) : (
                                     <>
                                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                                         </svg>
                                         Try Again
                                     </>
                                 )}
                             </span>
-                        </div>
-
-                        {/* Scores Grid */}
-                        <div className={styles.scoresGrid}>
-                            <div className={styles.scoreCard}>
-                                <div className={styles.scoreLabel}>Legibility</div>
-                                <div className={styles.scoreValue}>
-                                    {writingResponse.scores.legibility.toFixed(1)}
-                                    <span className={styles.scorePercentage}>%</span>
-                                </div>
-                            </div>
-                            <div className={styles.scoreCard}>
-                                <div className={styles.scoreLabel}>Form Accuracy</div>
-                                <div className={styles.scoreValue}>
-                                    {writingResponse.scores.form_accuracy.toFixed(1)}
-                                    <span className={styles.scorePercentage}>%</span>
-                                </div>
-                            </div>
-                            <div className={styles.scoreCard}>
-                                <div className={styles.scoreLabel}>Dots & Diacritics</div>
-                                <div className={styles.scoreValue}>
-                                    {writingResponse.scores.dots_diacritics.toFixed(1)}
-                                    <span className={styles.scorePercentage}>%</span>
-                                </div>
-                            </div>
-                            <div className={styles.scoreCard}>
-                                <div className={styles.scoreLabel}>Baseline & Proportion</div>
-                                <div className={styles.scoreValue}>
-                                    {writingResponse.scores.baseline_proportion.toFixed(1)}
-                                    <span className={styles.scorePercentage}>%</span>
-                                </div>
-                            </div>
-                            <div className={styles.scoreCard}>
-                                <div className={styles.scoreLabel}>Overall Score</div>
-                                <div className={styles.scoreValue}>
-                                    {writingResponse.scores.overall.toFixed(1)}
-                                    <span className={styles.scorePercentage}>%</span>
-                                </div>
-                            </div>
                         </div>
 
                         {/* Chat Interface */}
@@ -582,17 +558,6 @@ const LetterWritingProblemSet = () => {
                                     >
                                         {message}
                                     </div>
-                                ))}
-                            </div>
-                        )}
-
-                        {/* Mistake Tags */}
-                        {writingResponse.mistake_tags.length > 0 && (
-                            <div className={styles.mistakeTags}>
-                                {writingResponse.mistake_tags.map((tag, idx) => (
-                                    <span key={idx} className={styles.mistakeTag}>
-                                        {tag}
-                                    </span>
                                 ))}
                             </div>
                         )}
