@@ -1,3 +1,5 @@
+'use client'
+
 import { useResource } from "@/context/ResourceContext"
 import { useUserCourseProgress } from "@/context/UserCourseProgressContext";
 import { DiscriminationProblemSetResponse } from "@/types/response_models/ResourceResponse";
@@ -41,6 +43,17 @@ const DiscriminationProblemSet = () => {
     // Resource
     const discriminationProblemSet = resource.resource as DiscriminationProblemSetResponse;
     const problems = discriminationProblemSet.problems;
+    
+    // Safety check: ensure problemCounter is within bounds
+    if (problemCounter >= problems.length || problemCounter < 0) {
+        return (
+            <div className={styles.loading}>
+                <div className={styles.spinner}></div>
+                <p className={styles.loadingText}>Loading problem...</p>
+            </div>
+        );
+    }
+    
     const problem = problems[problemCounter];
     const answerChoices: string[] = problem.answer_choices;
     const correctAnswer: string = problem.correct_answer;
@@ -69,14 +82,19 @@ const DiscriminationProblemSet = () => {
     }, [problemCounter, answered]);
 
     // Handle audio playback
-    const handlePlayAudio = () => {
+    const handlePlayAudio = async () => {
         if (audioRef.current) {
             if (isPlaying) {
                 audioRef.current.pause();
                 setIsPlaying(false);
             } else {
-                audioRef.current.play();
-                setIsPlaying(true);
+                try {
+                    await audioRef.current.play();
+                    setIsPlaying(true);
+                } catch (err) {
+                    console.error("Failed to play audio:", err);
+                    setError("Unable to play audio. Please try again.");
+                }
             }
         }
     };
@@ -147,14 +165,20 @@ const DiscriminationProblemSet = () => {
     }
 
     const handleNext = async() => {
+        const authToken = localStorage.getItem("token");
+        if (!authToken) {
+            setError("Authentication required. Please log in.");
+            router.replace("/login");
+            return;
+        }
+
         if(atSetEnd && exerciseComplete){
             setIsLoading(true);
-            const authToken = localStorage.getItem("token");
 
             try{
                 // Clear problem counter
                 const clearProblemCounterResponse = await fetch(
-                    `${process.env.NEXT_PUBLIC_SERVER_URL}/user-course-progress/problem_counter/clear/${userCourseProgress!.id}`,
+                    `${process.env.NEXT_PUBLIC_SERVER_URL}/user-course-progress/problem-counter/clear/${userCourseProgress!.id}`,
                     {
                         method: "PUT",
                         headers: {
@@ -172,7 +196,7 @@ const DiscriminationProblemSet = () => {
                 // Increment current module if this is the current module
                 if(userCourseProgress!.curr_module === resource!.number){
                     const incrementUserCourseProgress = await fetch(
-                        `${process.env.NEXT_PUBLIC_SERVER_URL}/user-course-progress/curr_module/increment/${userCourseProgress!.id}`,
+                        `${process.env.NEXT_PUBLIC_SERVER_URL}/user-course-progress/curr-module/increment/${userCourseProgress!.id}`,
                         {
                             method: "PUT",
                             headers: {
@@ -204,11 +228,10 @@ const DiscriminationProblemSet = () => {
         } else if(atSetEnd && !exerciseComplete){
             // Reset to start of problem set
             setIsLoading(true);
-            const authToken = localStorage.getItem("token");
 
             try{
                 const resetProblemCounterResponse = await fetch(
-                    `${process.env.NEXT_PUBLIC_SERVER_URL}/user-course-progress/problem_counter/clear/${userCourseProgress!.id}`,
+                    `${process.env.NEXT_PUBLIC_SERVER_URL}/user-course-progress/problem-counter/clear/${userCourseProgress!.id}`,
                     {
                         method: "PUT",
                         headers: {
@@ -242,11 +265,10 @@ const DiscriminationProblemSet = () => {
         } else{
             // Move to next problem
             setIsLoading(true);
-            const authToken = localStorage.getItem("token");
 
             try{
                 const incrementProblemCounterResponse = await fetch(
-                    `${process.env.NEXT_PUBLIC_SERVER_URL}/user-course-progress/problem_counter/increment/${userCourseProgress!.id}`,
+                    `${process.env.NEXT_PUBLIC_SERVER_URL}/user-course-progress/problem-counter/increment/${userCourseProgress!.id}`,
                     {
                         method: "PUT",
                         headers: {
@@ -281,6 +303,14 @@ const DiscriminationProblemSet = () => {
         if (choice === selectedAnswer) return `${styles.answerButton} ${styles.incorrect}`;
         return styles.answerButton;
     };
+
+    // Auto-dismiss error after 5 seconds
+    useEffect(() => {
+        if (error) {
+            const timer = setTimeout(() => setError(''), 5000);
+            return () => clearTimeout(timer);
+        }
+    }, [error]);
 
     return(
         <div className={styles.container}>
@@ -400,6 +430,9 @@ const DiscriminationProblemSet = () => {
             {/* Error Toast */}
             {error && (
                 <div className={styles.errorToast}>
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
                     {error}
                 </div>
             )}

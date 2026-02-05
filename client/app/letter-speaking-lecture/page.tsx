@@ -64,14 +64,19 @@ const LetterSpeakingLecture = () => {
             audio.removeEventListener('play', handleAudioPlay);
             audio.removeEventListener('pause', handleAudioPause);
         };
-    }, [audioRef.current]);
+    }, []); // Empty array - setup once on mount
 
-    const handlePlayLetter = () => {
+    const handlePlayLetter = async () => {
         if (audioRef.current) {
             if (isPlaying) {
                 audioRef.current.pause();
             } else {
-                audioRef.current.play();
+                try {
+                    await audioRef.current.play();
+                } catch (err) {
+                    console.error("Failed to play audio:", err);
+                    setError("Failed to play audio. Please try again.");
+                }
             }
         }
     };
@@ -86,15 +91,19 @@ const LetterSpeakingLecture = () => {
     }
 
     const handleNext = async () => {
-        setResource(null);
-
         if(userCourseProgress?.curr_module === resource.number){
-            setIsLoading(true);
             const authToken = localStorage.getItem("token");
+            if (!authToken) {
+                setError("Authentication required. Please log in.");
+                router.replace("/login");
+                return;
+            }
+
+            setIsLoading(true);
 
             try {
                 const incrementUserCourseProgress = await fetch(
-                    `${process.env.NEXT_PUBLIC_SERVER_URL}/user-course-progress/curr_module/increment/${userCourseProgress.id}`,
+                    `${process.env.NEXT_PUBLIC_SERVER_URL}/user-course-progress/curr-module/increment/${userCourseProgress.id}`,
                     {
                         method: "PUT",
                         headers: {
@@ -113,11 +122,14 @@ const LetterSpeakingLecture = () => {
                 setUserCourseProgress(updatedProgress);
             } catch(err){
                 setError(err instanceof Error ? err.message : "Error in updating userCourseProgress.");
+                setIsLoading(false);
+                return;
             } finally{
                 setIsLoading(false);
             }
         }
 
+        setResource(null);
         router.replace("/");
     }
 
@@ -183,7 +195,7 @@ const LetterSpeakingLecture = () => {
         );
     };
 
-    const handleCellClick = (cellContent: string, isLetterForm: boolean, cellIndex: number) => {
+    const handleCellClick = async (cellContent: string, isLetterForm: boolean, cellIndex: number) => {
         if (audioRef.current) {
             audioRef.current.pause();
             audioRef.current.currentTime = 0;
@@ -193,14 +205,22 @@ const LetterSpeakingLecture = () => {
             // Play letter audio for letter forms
             if (audioRef.current) {
                 audioRef.current.src = letterAudio;
-                audioRef.current.play();
+                try {
+                    await audioRef.current.play();
+                } catch (err) {
+                    console.error("Failed to play letter audio:", err);
+                }
             }
         } else {
             // Play word audio from word_audios array
             if (wordAudios && wordAudios[cellIndex]) {
                 if (audioRef.current) {
                     audioRef.current.src = wordAudios[cellIndex];
-                    audioRef.current.play();
+                    try {
+                        await audioRef.current.play();
+                    } catch (err) {
+                        console.error("Failed to play word audio:", err);
+                    }
                 }
             }
         }
@@ -212,6 +232,15 @@ const LetterSpeakingLecture = () => {
             <div className={styles.initialStage}>
                 <audio ref={audioRef} src={letterAudio} preload="auto" />
                 
+                {/* Home Button */}
+                <button className={styles.homeButton} onClick={handleHomeNav}>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
+                        <polyline points="9 22 9 12 15 12 15 22"/>
+                    </svg>
+                    Home
+                </button>
+
                 <div className={styles.audioPlayerContainer}>
                     <div className={styles.waveContainer}>
                         <div className={`${styles.wave} ${isPlaying ? styles.active : ''}`}></div>
@@ -238,6 +267,24 @@ const LetterSpeakingLecture = () => {
                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
                                 <path fillRule="evenodd" d="M3 10a.75.75 0 01.75-.75h10.638L10.23 5.29a.75.75 0 111.04-1.08l5.5 5.25a.75.75 0 010 1.08l-5.5 5.25a.75.75 0 11-1.04-1.08l4.158-3.96H3.75A.75.75 0 013 10z" clipRule="evenodd" />
                             </svg>
+                        </button>
+                    </div>
+                )}
+
+                {/* Error Toast */}
+                {error && (
+                    <div className={styles.errorToast}>
+                        <div className={styles.errorContent}>
+                            <svg viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                            </svg>
+                            <span>{error}</span>
+                        </div>
+                        <button 
+                            className={styles.errorClose}
+                            onClick={() => setError('')}
+                        >
+                            ×
                         </button>
                     </div>
                 )}
@@ -287,6 +334,17 @@ const LetterSpeakingLecture = () => {
             {/* Navigation Footer */}
             <div className={styles.footer}>
                 <button 
+                    className={styles.homeButtonFooter}
+                    onClick={handleHomeNav}
+                    disabled={isLoading}
+                >
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
+                        <polyline points="9 22 9 12 15 12 15 22"/>
+                    </svg>
+                    Home
+                </button>
+                <button 
                     className={styles.continueButton}
                     onClick={handleNext}
                     disabled={isLoading}
@@ -297,6 +355,24 @@ const LetterSpeakingLecture = () => {
                     </svg>
                 </button>
             </div>
+
+            {/* Error Toast */}
+            {error && (
+                <div className={styles.errorToast}>
+                    <div className={styles.errorContent}>
+                        <svg viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        <span>{error}</span>
+                    </div>
+                    <button 
+                        className={styles.errorClose}
+                        onClick={() => setError('')}
+                    >
+                        ×
+                    </button>
+                </div>
+            )}
         </div>
     );
 }

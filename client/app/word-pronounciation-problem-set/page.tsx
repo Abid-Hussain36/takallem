@@ -1,8 +1,10 @@
+'use client'
+
 import { useResource } from "@/context/ResourceContext"
 import { useUserCourseProgress } from "@/context/UserCourseProgressContext";
-import { LetterWordPronounciationExplainInput } from "@/types/request_models/LetterWordPronounciationExplainInput";
-import { ExplainResponse } from "@/types/response_models/ExplainResponse";
-import { LetterPronounciationResponse } from "@/types/response_models/LetterPronounciationResponse";
+import { PronounciationExplainInput } from "@/types/request_models/PronounciationExplainInput";
+import { PronounciationExplainOutput } from "@/types/response_models/PronounciationExplainOutput";
+import { PronounciationResponse } from "@/types/response_models/PronounciationResponse";
 import { WordPronounciationProblemSetResponse } from "@/types/response_models/ResourceResponse";
 import { useRouter } from "next/navigation";
 import { useRef, useState, useEffect } from "react";
@@ -37,6 +39,17 @@ const WordPronounciationProblemSet = () => {
     // Resource
     const wordPronounciationProblemSet = resource.resource as WordPronounciationProblemSetResponse;
     const problems = wordPronounciationProblemSet.problems;
+    
+    // Safety check: ensure problemCounter is within bounds
+    if (problemCounter >= problems.length || problemCounter < 0) {
+        return (
+            <div className={styles.loading}>
+                <div className={styles.spinner}></div>
+                <p className={styles.loadingText}>Loading problem...</p>
+            </div>
+        );
+    }
+    
     const problem = problems[problemCounter];
 
     // Pronunciation Data per problem
@@ -58,6 +71,9 @@ const WordPronounciationProblemSet = () => {
     
     // Word Audio
     const wordAudioRef = useRef<HTMLAudioElement | null>(null);
+    
+    // Chat Messages Ref for auto-scroll
+    const chatMessagesRef = useRef<HTMLDivElement | null>(null);
 
     // Completion check
     const allProblemsCompleted = progressStatus.every(status => status === 'correct');
@@ -95,9 +111,14 @@ const WordPronounciationProblemSet = () => {
     }, [problemCounter]);
 
     // Play word audio when user clicks on the word
-    const playWordAudio = () => {
+    const playWordAudio = async () => {
         if (wordAudioRef.current) {
-            wordAudioRef.current.play();
+            try {
+                await wordAudioRef.current.play();
+            } catch (err) {
+                console.error("Failed to play audio:", err);
+                setError("Failed to play audio. Please try again.");
+            }
         }
     };
 
@@ -164,22 +185,28 @@ const WordPronounciationProblemSet = () => {
             return;
         }
 
+        const authToken = localStorage.getItem('token');
+        if (!authToken) {
+            setError("Authentication required. Please log in.");
+            router.replace("/login");
+            return;
+        }
+
         const formData = new FormData();
         formData.append('user_audio', audioBlob, 'user_audio.webm');
-        formData.append('word', problem.word);
+        formData.append('phrase', problem.word);
+        formData.append('isWord', 'true');
         formData.append('language', userCourseProgress!.language);
         if (userCourseProgress!.dialect) {
             formData.append('dialect', userCourseProgress!.dialect);
         }
-        
-        const authToken = localStorage.getItem('token');
 
         setIsLoading(true);
         setError("");
         
         try {
             const pronounciationCheckResponse = await fetch(
-                `${process.env.NEXT_PUBLIC_SERVER_URL}/letter/pronounciation/word/check`,
+                `${process.env.NEXT_PUBLIC_SERVER_URL}/pronounciation/check`,
                 {
                     method: 'POST',
                     headers: {
@@ -194,7 +221,7 @@ const WordPronounciationProblemSet = () => {
                 throw new Error(errorData.detail || 'Failed to submit audio');
             }
             
-            const pronounciationCheckResult: LetterPronounciationResponse = await pronounciationCheckResponse.json();
+            const pronounciationCheckResult: PronounciationResponse = await pronounciationCheckResponse.json();
 
             setStatus(pronounciationCheckResult.status);
             transcription.current = pronounciationCheckResult.transcription;
@@ -226,15 +253,22 @@ const WordPronounciationProblemSet = () => {
             return;
         }
 
+        const authToken = localStorage.getItem('token');
+        if (!authToken) {
+            setError("Authentication required. Please log in.");
+            router.replace("/login");
+            return;
+        }
+
         setIsLoading(true);
         setError("");
 
         try{
-            const authToken = localStorage.getItem('token');
-
-            const explainRequest: LetterWordPronounciationExplainInput = {
+            const explainRequest: PronounciationExplainInput = {
                 query: query,
-                word: word.current,
+                language: userCourseProgress!.language,
+                dialect: userCourseProgress?.dialect ?? null,
+                phrase: word.current,
                 status: status,
                 transcription: transcription.current,
                 previous_feedback: feedback,
@@ -243,7 +277,7 @@ const WordPronounciationProblemSet = () => {
             }
 
             const explainResponse = await fetch(
-                `${process.env.NEXT_PUBLIC_SERVER_URL}/letter/pronounciation/word/explain`,
+                `${process.env.NEXT_PUBLIC_SERVER_URL}/pronounciation/explain`,
                 {
                     method: "POST",
                     headers: {
@@ -259,8 +293,8 @@ const WordPronounciationProblemSet = () => {
                 throw new Error(errorData.detail || "Failed to get explain response.")
             }
 
-            const explainResult: ExplainResponse = await explainResponse.json();
-            setFeedback([...feedback, query, explainResult.feedback]);
+            const explainResult: PronounciationExplainOutput = await explainResponse.json();
+            setFeedback([...feedback, query, explainResult.response || ""]);
             setQuery("");
         } catch(err){
             setError(err instanceof Error ? err.message : "Error answering user question.");
@@ -275,15 +309,21 @@ const WordPronounciationProblemSet = () => {
     }
 
     const handleNext = async () => {
+        const authToken = localStorage.getItem("token");
+        if (!authToken) {
+            setError("Authentication required. Please log in.");
+            router.replace("/login");
+            return;
+        }
+
         if (allProblemsCompleted) {
             // All problems passed, complete the exercise
             setIsLoading(true);
-            const authToken = localStorage.getItem("token");
 
             try{
                 // Clear problem counter
                 const clearProblemCounterResponse = await fetch(
-                    `${process.env.NEXT_PUBLIC_SERVER_URL}/user-course-progress/problem_counter/clear/${userCourseProgress!.id}`,
+                    `${process.env.NEXT_PUBLIC_SERVER_URL}/user-course-progress/problem-counter/clear/${userCourseProgress!.id}`,
                     {
                         method: "PUT",
                         headers: {
@@ -301,7 +341,7 @@ const WordPronounciationProblemSet = () => {
                 // Increment current module if this is the current module
                 if(userCourseProgress!.curr_module === resource!.number){
                     const incrementUserCourseProgress = await fetch(
-                        `${process.env.NEXT_PUBLIC_SERVER_URL}/user-course-progress/curr_module/increment/${userCourseProgress!.id}`,
+                        `${process.env.NEXT_PUBLIC_SERVER_URL}/user-course-progress/curr-module/increment/${userCourseProgress!.id}`,
                         {
                             method: "PUT",
                             headers: {
@@ -333,11 +373,10 @@ const WordPronounciationProblemSet = () => {
         } else if (passed) {
             // Move to next problem
             setIsLoading(true);
-            const authToken = localStorage.getItem("token");
 
             try{
                 const incrementProblemCounterResponse = await fetch(
-                    `${process.env.NEXT_PUBLIC_SERVER_URL}/user-course-progress/problem_counter/increment/${userCourseProgress!.id}`,
+                    `${process.env.NEXT_PUBLIC_SERVER_URL}/user-course-progress/problem-counter/increment/${userCourseProgress!.id}`,
                     {
                         method: "PUT",
                         headers: {
@@ -361,6 +400,13 @@ const WordPronounciationProblemSet = () => {
             }
         }
     }
+
+    // Auto-scroll chat messages
+    useEffect(() => {
+        if (chatMessagesRef.current) {
+            chatMessagesRef.current.scrollTop = chatMessagesRef.current.scrollHeight;
+        }
+    }, [feedback]);
 
     // Auto-dismiss error after 5 seconds
     useEffect(() => {
@@ -476,7 +522,7 @@ const WordPronounciationProblemSet = () => {
 
                         {/* Chat Interface */}
                         {feedback.length > 0 && (
-                            <div className={styles.chatContainer}>
+                            <div className={styles.chatContainer} ref={chatMessagesRef}>
                                 {feedback.map((message, index) => (
                                     <div 
                                         key={index} 

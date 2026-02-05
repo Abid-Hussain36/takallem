@@ -1,8 +1,10 @@
+'use client'
+
 import { useResource } from "@/context/ResourceContext"
 import { useUserCourseProgress } from "@/context/UserCourseProgressContext";
-import { LetterPronounciationExplainInput } from "@/types/request_models/LetterPronounciationExplainInput";
-import { ExplainResponse } from "@/types/response_models/ExplainResponse";
-import { LetterPronounciationResponse } from "@/types/response_models/LetterPronounciationResponse";
+import { PronounciationExplainInput } from "@/types/request_models/PronounciationExplainInput";
+import { PronounciationExplainOutput } from "@/types/response_models/PronounciationExplainOutput";
+import { PronounciationResponse } from "@/types/response_models/PronounciationResponse";
 import { LetterPronounciationProblemResponse } from "@/types/response_models/ResourceResponse";
 import { useRouter } from "next/navigation";
 import { useRef, useState, useEffect } from "react";
@@ -42,9 +44,14 @@ const LetterPronounciationProblem = () => {
     const letterAudioRef = useRef<HTMLAudioElement | null>(null);
 
     // Play letter audio when user clicks on the letter
-    const playLetterAudio = () => {
+    const playLetterAudio = async () => {
         if (letterAudioRef.current) {
-            letterAudioRef.current.play();
+            try {
+                await letterAudioRef.current.play();
+            } catch (err) {
+                console.error("Failed to play audio:", err);
+                setError("Failed to play audio. Please try again.");
+            }
         }
     };
 
@@ -111,22 +118,28 @@ const LetterPronounciationProblem = () => {
             return;
         }
 
+        const authToken = localStorage.getItem('token');
+        if (!authToken) {
+            setError("Authentication required. Please log in.");
+            router.replace("/login");
+            return;
+        }
+
         const formData = new FormData();
         formData.append('user_audio', audioBlob, 'user_audio.webm');
-        formData.append('letter', problem.letter);
+        formData.append('phrase', problem.letter);
+        formData.append('isWord', 'false');
         formData.append('language', userCourseProgress!.language);
         if (userCourseProgress!.dialect) {
             formData.append('dialect', userCourseProgress!.dialect);
         }
-        
-        const authToken = localStorage.getItem('token');
 
         setIsLoading(true);
         setError("");
         
         try {
             const pronounciationCheckResponse = await fetch(
-                `${process.env.NEXT_PUBLIC_SERVER_URL}/letter/pronounciation/letter/check`,
+                `${process.env.NEXT_PUBLIC_SERVER_URL}/pronounciation/check`,
                 {
                     method: 'POST',
                     headers: {
@@ -141,7 +154,7 @@ const LetterPronounciationProblem = () => {
                 throw new Error(errorData.detail || 'Failed to submit audio');
             }
             
-            const pronounciationCheckResult: LetterPronounciationResponse = await pronounciationCheckResponse.json();
+            const pronounciationCheckResult: PronounciationResponse = await pronounciationCheckResponse.json();
 
             setStatus(pronounciationCheckResult.status);
             transcription.current = pronounciationCheckResult.transcription;
@@ -168,15 +181,22 @@ const LetterPronounciationProblem = () => {
             return;
         }
 
+        const authToken = localStorage.getItem('token');
+        if (!authToken) {
+            setError("Authentication required. Please log in.");
+            router.replace("/login");
+            return;
+        }
+
         setIsLoading(true);
         setError("");
 
         try{
-            const authToken = localStorage.getItem('token');
-
-            const explainRequest: LetterPronounciationExplainInput = {
+            const explainRequest: PronounciationExplainInput = {
                 query: query,
-                letter: letter.current,
+                language: userCourseProgress!.language,
+                dialect: userCourseProgress?.dialect ?? null,
+                phrase: letter.current,
                 status: status,
                 transcription: transcription.current,
                 previous_feedback: feedback,
@@ -185,7 +205,7 @@ const LetterPronounciationProblem = () => {
             }
 
             const explainResponse = await fetch(
-                `${process.env.NEXT_PUBLIC_SERVER_URL}/letter/pronounciation/letter/explain`,
+                `${process.env.NEXT_PUBLIC_SERVER_URL}/pronounciation/explain`,
                 {
                     method: "POST",
                     headers: {
@@ -201,9 +221,9 @@ const LetterPronounciationProblem = () => {
                 throw new Error(errorData.detail || "Failed to get explain response.")
             }
 
-            const explainResult: ExplainResponse = await explainResponse.json();
+            const explainResult: PronounciationExplainOutput = await explainResponse.json();
             // Append user question and AI response to feedback array
-            setFeedback([...feedback, query, explainResult.feedback]);
+            setFeedback([...feedback, query, explainResult.response || ""]);
             setQuery("");
         } catch(err){
             setError(err instanceof Error ? err.message : "Error answering user question.");
@@ -218,13 +238,19 @@ const LetterPronounciationProblem = () => {
     }
 
     const handleNext = async () => {
+        const authToken = localStorage.getItem("token");
+        if (!authToken) {
+            setError("Authentication required. Please log in.");
+            router.replace("/login");
+            return;
+        }
+
         if(userCourseProgress!.curr_module === resource!.number){
             setIsLoading(true);
-            const authToken = localStorage.getItem("token");
 
             try {
                 const incrementUserCourseProgress = await fetch(
-                    `${process.env.NEXT_PUBLIC_SERVER_URL}/user-course-progress/curr_module/increment/${userCourseProgress!.id}`,
+                    `${process.env.NEXT_PUBLIC_SERVER_URL}/user-course-progress/curr-module/increment/${userCourseProgress!.id}`,
                     {
                         method: "PUT",
                         headers: {
@@ -241,15 +267,18 @@ const LetterPronounciationProblem = () => {
 
                 const newUserCourseProgress = await incrementUserCourseProgress.json();
                 setUserCourseProgress(newUserCourseProgress);
+                
+                setResource(null);
+                router.replace("/");
             } catch(err){
                 setError(err instanceof Error ? err.message : "Error in updating userCourseProgress.");
             } finally{
                 setIsLoading(false);
             }
+        } else {
+            setResource(null);
+            router.replace("/");
         }
-
-        setResource(null);
-        router.replace("/");
     }
 
     // Auto-dismiss error after 5 seconds

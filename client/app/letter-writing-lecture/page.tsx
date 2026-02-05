@@ -6,7 +6,7 @@ import { LetterWritingLectureResponse } from "@/types/response_models/ResourceRe
 import ReactMarkdown from 'react-markdown';
 import styles from './LetterWritingLecture.module.css';
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 const LetterWritingLecture = () => {
     const router = useRouter();
@@ -42,19 +42,33 @@ const LetterWritingLecture = () => {
         }
     };
 
+    // Auto-dismiss error after 5 seconds
+    useEffect(() => {
+        if (error) {
+            const timer = setTimeout(() => setError(""), 5000);
+            return () => clearTimeout(timer);
+        }
+    }, [error]);
+
     const handleHomeNav = () => {
         setResource(null);
         router.replace("/");
     }
 
     const handleNext = async () => {
+        const authToken = localStorage.getItem("token");
+        if (!authToken) {
+            setError("Authentication required. Please log in.");
+            router.replace("/login");
+            return;
+        }
+
         if(userCourseProgress!.curr_module === resource.number){
             setIsLoading(true);
-            const authToken = localStorage.getItem("token");
 
             try {
                 const incrementUserCourseProgress = await fetch(
-                    `${process.env.NEXT_PUBLIC_SERVER_URL}/user-course-progress/curr_module/increment/${userCourseProgress!.id}`,
+                    `${process.env.NEXT_PUBLIC_SERVER_URL}/user-course-progress/curr-module/increment/${userCourseProgress!.id}`,
                     {
                         method: "PUT",
                         headers: {
@@ -71,15 +85,18 @@ const LetterWritingLecture = () => {
 
                 const newUserCourseProgress = await incrementUserCourseProgress.json();
                 setUserCourseProgress(newUserCourseProgress);
+                
+                setResource(null);
+                router.replace("/");
             } catch(err){
                 setError(err instanceof Error ? err.message : "Error in updating userCourseProgress.");
             } finally{
                 setIsLoading(false);
             }
+        } else {
+            setResource(null);
+            router.replace("/");
         }
-
-        setResource(null);
-        router.replace("/");
     }
 
     return(
@@ -185,19 +202,12 @@ const LetterWritingLecture = () => {
                 </button>
             </div>
 
-            {/* Error Display */}
+            {/* Error Toast */}
             {error && (
-                <div style={{
-                    position: 'fixed',
-                    top: '2rem',
-                    right: '2rem',
-                    background: '#ef4444',
-                    color: 'white',
-                    padding: '1rem 1.5rem',
-                    borderRadius: '0.5rem',
-                    boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
-                    zIndex: 1000
-                }}>
+                <div className={styles.errorToast}>
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
                     {error}
                 </div>
             )}

@@ -593,7 +593,7 @@
     z-index: 1000;
 }
 
-.error {
+.errorToast {
     position: fixed;
     top: 2rem;
     right: 2rem;
@@ -604,6 +604,15 @@
     box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
     z-index: 1001;
     animation: slideIn 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.errorToast svg {
+    width: 24px;
+    height: 24px;
+    flex-shrink: 0;
 }
 
 @keyframes slideIn {
@@ -615,6 +624,109 @@
         transform: translateX(0);
         opacity: 1;
     }
+}
+
+/* Chat Interface Styles */
+.chatContainer {
+    max-height: 300px;
+    overflow-y: auto;
+    background: #f9fafb;
+    border-radius: 12px;
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    border: 2px solid #e5e7eb;
+}
+
+.chatMessage {
+    padding: 0.75rem 1rem;
+    border-radius: 12px;
+    max-width: 80%;
+    word-wrap: break-word;
+    line-height: 1.5;
+}
+
+.chatMessage.ai {
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1));
+    border: 2px solid rgba(102, 126, 234, 0.3);
+    align-self: flex-start;
+    color: #374151;
+}
+
+.chatMessage.user {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    align-self: flex-end;
+}
+
+/* Question Input Section */
+.questionInputContainer {
+    margin-top: 1rem;
+}
+
+.questionInputLabel {
+    display: block;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #4b5563;
+    margin-bottom: 0.75rem;
+}
+
+.questionInputWrapper {
+    display: flex;
+    gap: 0.75rem;
+    align-items: flex-end;
+}
+
+.questionInput {
+    flex: 1;
+    padding: 0.75rem;
+    border: 2px solid #e5e7eb;
+    border-radius: 12px;
+    font-size: 1rem;
+    resize: vertical;
+    min-height: 60px;
+    max-height: 120px;
+    font-family: inherit;
+    transition: border-color 0.3s ease;
+}
+
+.questionInput:focus {
+    outline: none;
+    border-color: #667eea;
+}
+
+.askButton {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+    height: fit-content;
+}
+
+.askButton:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+}
+
+.askButton:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.askButton svg {
+    width: 18px;
+    height: 18px;
 }
 
 /* Responsive Design */

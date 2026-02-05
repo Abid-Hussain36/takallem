@@ -4,6 +4,8 @@ import { useResource } from "@/context/ResourceContext"
 import { useUserCourseProgress } from "@/context/UserCourseProgressContext";
 import { LetterWritingProblemSetResponse } from "@/types/response_models/ResourceResponse";
 import { LetterWritingResponse, WritingPhotoRetakeResponse } from "@/types/response_models/LetterWritingResponse";
+import { WritingExplainInput } from "@/types/request_models/WritingExplainInput";
+import { WritingExplainOutput } from "@/types/response_models/WritingExplainOutput";
 import { useRouter } from "next/navigation";
 import { useState, useEffect, useRef } from "react";
 import styles from './LetterWritingProblemSet.module.css';
@@ -37,6 +39,17 @@ const LetterWritingProblemSet = () => {
     // Resource
     const letterWritingProblemSet = resource.resource as LetterWritingProblemSetResponse;
     const problems = letterWritingProblemSet.problems;
+    
+    // Safety check: ensure problemCounter is within bounds
+    if (problemCounter >= problems.length || problemCounter < 0) {
+        return (
+            <div className={styles.loading}>
+                <div className={styles.spinner}></div>
+                <p className={styles.loadingText}>Loading problem...</p>
+            </div>
+        );
+    }
+    
     const problem = problems[problemCounter];
 
     // Writing Data per problem
@@ -46,7 +59,12 @@ const LetterWritingProblemSet = () => {
     const [showFeedback, setShowFeedback] = useState<boolean>(false);
     const [passed, setPassed] = useState<boolean>(false);
     
+    // Chat functionality
+    const [query, setQuery] = useState<string>("");
+    const [feedback, setFeedback] = useState<string[]>([]);
+    
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const chatMessagesRef = useRef<HTMLDivElement | null>(null);
 
     // Completion check
     const allProblemsCompleted = progressStatus.every(status => status === 'correct');
@@ -76,6 +94,8 @@ const LetterWritingProblemSet = () => {
         setWritingResponse(null);
         setShowFeedback(false);
         setPassed(false);
+        setQuery("");
+        setFeedback([]);
         if (fileInputRef.current) {
             fileInputRef.current.value = '';
         }
@@ -124,11 +144,17 @@ const LetterWritingProblemSet = () => {
             return;
         }
 
+        const authToken = localStorage.getItem("token");
+        if (!authToken) {
+            setError("Authentication required. Please log in.");
+            router.replace("/login");
+            return;
+        }
+
         setIsLoading(true);
         setError('');
 
         try {
-            const authToken = localStorage.getItem("token");
             const formData = new FormData();
             
             formData.append('user_image', uploadedImage);
@@ -141,9 +167,13 @@ const LetterWritingProblemSet = () => {
             
             formData.append('letter', problem.letter);
             formData.append('position', problem.position);
+            formData.append('language', userCourseProgress!.language);
+            if (userCourseProgress!.dialect) {
+                formData.append('dialect', userCourseProgress!.dialect);
+            }
 
             const response = await fetch(
-                `${process.env.NEXT_PUBLIC_SERVER_URL}/letter/writing/alphabet`,
+                `${process.env.NEXT_PUBLIC_SERVER_URL}/writing/letter`,
                 {
                     method: 'POST',
                     headers: {
@@ -170,6 +200,7 @@ const LetterWritingProblemSet = () => {
 
             const writingResult = result as LetterWritingResponse;
             setWritingResponse(writingResult);
+            setFeedback([writingResult.feedback]);
             setShowFeedback(true);
 
             // Check if passed
@@ -189,6 +220,70 @@ const LetterWritingProblemSet = () => {
         }
     };
 
+    // Handle question submit for chat
+    const handleQuestionSubmit = async () => {
+        if (!query.trim()) {
+            setError("Please enter a question");
+            return;
+        }
+
+        if (!writingResponse) {
+            setError("Please submit your writing first");
+            return;
+        }
+
+        const authToken = localStorage.getItem('token');
+        if (!authToken) {
+            setError("Authentication required. Please log in.");
+            router.replace("/login");
+            return;
+        }
+
+        setIsLoading(true);
+        setError("");
+
+        try {
+            const explainRequest: WritingExplainInput = {
+                query: query,
+                language: userCourseProgress!.language,
+                dialect: userCourseProgress?.dialect ?? null,
+                letter: problem.letter,
+                position: problem.position,
+                status: writingResponse.status,
+                scores: writingResponse.scores,
+                previous_feedback: feedback,
+                mistake_tags: writingResponse.mistake_tags,
+                performance_reflection: writingResponse.performance_reflection
+            };
+
+            const explainResponse = await fetch(
+                `${process.env.NEXT_PUBLIC_SERVER_URL}/writing/letter/explain`,
+                {
+                    method: "POST",
+                    headers: {
+                        "Authorization": `Bearer ${authToken}`,
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify(explainRequest)
+                }
+            );
+
+            if (!explainResponse.ok) {
+                const errorData = await explainResponse.json();
+                throw new Error(errorData.detail || "Failed to get explain response.");
+            }
+
+            const explainResult: WritingExplainOutput = await explainResponse.json();
+            // Append user question and AI response to feedback array
+            setFeedback([...feedback, query, explainResult.response || ""]);
+            setQuery("");
+        } catch (err) {
+            setError(err instanceof Error ? err.message : "Error answering user question.");
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
     // Navigate home
     const handleHomeNav = () => {
         setResource(null);
@@ -197,15 +292,21 @@ const LetterWritingProblemSet = () => {
 
     // Handle next button
     const handleNext = async () => {
+        const authToken = localStorage.getItem("token");
+        if (!authToken) {
+            setError("Authentication required. Please log in.");
+            router.replace("/login");
+            return;
+        }
+
         if (allProblemsCompleted) {
             // All problems completed, increment module
             setIsLoading(true);
-            const authToken = localStorage.getItem("token");
 
             try {
                 // Reset problem counter
                 const resetCounterResponse = await fetch(
-                    `${process.env.NEXT_PUBLIC_SERVER_URL}/user-course-progress/problem_counter/clear/${userCourseProgress!.id}`,
+                    `${process.env.NEXT_PUBLIC_SERVER_URL}/user-course-progress/problem-counter/clear/${userCourseProgress!.id}`,
                     {
                         method: "PUT",
                         headers: {
@@ -221,7 +322,7 @@ const LetterWritingProblemSet = () => {
 
                 // Increment current module
                 const incrementModuleResponse = await fetch(
-                    `${process.env.NEXT_PUBLIC_SERVER_URL}/user-course-progress/curr_module/increment/${userCourseProgress!.id}`,
+                    `${process.env.NEXT_PUBLIC_SERVER_URL}/user-course-progress/curr-module/increment/${userCourseProgress!.id}`,
                     {
                         method: "PUT",
                         headers: {
@@ -250,11 +351,10 @@ const LetterWritingProblemSet = () => {
         } else {
             // Move to next problem
             setIsLoading(true);
-            const authToken = localStorage.getItem("token");
 
             try {
                 const incrementResponse = await fetch(
-                    `${process.env.NEXT_PUBLIC_SERVER_URL}/user-course-progress/problem_counter/increment/${userCourseProgress!.id}`,
+                    `${process.env.NEXT_PUBLIC_SERVER_URL}/user-course-progress/problem-counter/increment/${userCourseProgress!.id}`,
                     {
                         method: "PUT",
                         headers: {
@@ -278,6 +378,13 @@ const LetterWritingProblemSet = () => {
             }
         }
     };
+
+    // Auto-scroll chat messages
+    useEffect(() => {
+        if (chatMessagesRef.current) {
+            chatMessagesRef.current.scrollTop = chatMessagesRef.current.scrollHeight;
+        }
+    }, [feedback]);
 
     // Auto-dismiss error after 5 seconds
     useEffect(() => {
@@ -465,10 +572,19 @@ const LetterWritingProblemSet = () => {
                             </div>
                         </div>
 
-                        {/* Feedback Text */}
-                        <div className={styles.feedbackText}>
-                            {writingResponse.feedback}
-                        </div>
+                        {/* Chat Interface */}
+                        {feedback.length > 0 && (
+                            <div className={styles.chatContainer} ref={chatMessagesRef}>
+                                {feedback.map((message, index) => (
+                                    <div 
+                                        key={index} 
+                                        className={`${styles.chatMessage} ${index % 2 === 0 ? styles.ai : styles.user}`}
+                                    >
+                                        {message}
+                                    </div>
+                                ))}
+                            </div>
+                        )}
 
                         {/* Mistake Tags */}
                         {writingResponse.mistake_tags.length > 0 && (
@@ -480,6 +596,37 @@ const LetterWritingProblemSet = () => {
                                 ))}
                             </div>
                         )}
+
+                        {/* Question Input */}
+                        <div className={styles.questionInputContainer}>
+                            <label className={styles.questionInputLabel}>
+                                Have a question? Ask the AI for clarification:
+                            </label>
+                            <div className={styles.questionInputWrapper}>
+                                <textarea
+                                    className={styles.questionInput}
+                                    value={query}
+                                    onChange={(e) => setQuery(e.target.value)}
+                                    placeholder="Type your question here..."
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Enter' && !e.shiftKey) {
+                                            e.preventDefault();
+                                            handleQuestionSubmit();
+                                        }
+                                    }}
+                                />
+                                <button 
+                                    className={styles.askButton} 
+                                    onClick={handleQuestionSubmit}
+                                    disabled={isLoading || !query.trim()}
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                                    </svg>
+                                    Ask
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 )}
 
@@ -531,7 +678,10 @@ const LetterWritingProblemSet = () => {
 
             {/* Error Toast */}
             {error && (
-                <div className={styles.error}>
+                <div className={styles.errorToast}>
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
                     {error}
                 </div>
             )}
