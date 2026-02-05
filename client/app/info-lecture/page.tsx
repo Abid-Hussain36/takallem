@@ -8,14 +8,16 @@ import { useRouter } from "next/navigation";
 import { useModules } from "@/context/ModulesContext";
 import { useUserCourseProgress } from "@/context/UserCourseProgressContext";
 import { useState } from "react";
+import { useUser } from "@/context/UserContext";
 
 
 const InfoLecture = () => {
     const router = useRouter();
 
+    const {setUser} = useUser();
     const {resource, setResource} = useResource();
-    //const {modules, setModules} = useModules();
     const {userCourseProgress, setUserCourseProgress} = useUserCourseProgress();
+    const {setModules} = useModules();
 
     const [isLoading, setIsLoading] = useState<boolean>(false)
     const [error, setError] = useState<string>("")
@@ -32,13 +34,23 @@ const InfoLecture = () => {
     }
 
     const handleNext = async () => {
-        if(userCourseProgress!.curr_module === resource.number){
-            setIsLoading(true);
-            const authToken = localStorage.getItem("token");
+        const authToken = localStorage.getItem("token");
 
+        if (!authToken) {
+            setError("User is not authenticated");
+            setUser(null);
+            setUserCourseProgress(null);
+            setModules(null);
+            setResource(null);
+            router.replace("/login");
+            return;
+        }
+
+        if(userCourseProgress!.curr_module === resource.number){
             try {
+                setIsLoading(true);
                 const incrementUserCourseProgress = await fetch(
-                    `${process.env.NEXT_PUBLIC_SERVER_URL}/user-course-progress/curr_module/increment/${userCourseProgress!.id}`,
+                    `${process.env.NEXT_PUBLIC_SERVER_URL}/user-course-progress/curr-module/increment/${userCourseProgress!.id}`,
                     {
                         method: "PUT",
                         headers: {
@@ -55,15 +67,18 @@ const InfoLecture = () => {
 
                 const newUserCourseProgress = await incrementUserCourseProgress.json();
                 setUserCourseProgress(newUserCourseProgress);
+
+                setResource(null);
+                router.replace("/");
             } catch(err){
                 setError(err instanceof Error ? err.message : "Error in updating userCourseProgress.");
             } finally{
                 setIsLoading(false);
             }
+        } else{
+            setResource(null);
+            router.replace("/");
         }
-
-        setResource(null);
-        router.replace("/");
     }
 
     return(

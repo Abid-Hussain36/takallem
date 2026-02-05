@@ -11,9 +11,6 @@ class VocabSpeakingProblemSets(Resource):
 
     id: Mapped[int] = mapped_column(ForeignKey("resources.id", ondelete="CASCADE"), primary_key=True)
 
-    set_limit: Mapped[int] = mapped_column()
-    dialect: Mapped[AvailableDialect | None] = mapped_column(Enum(AvailableDialect))
-
     # Relationship
     problem_sets: Mapped[List["VocabSpeakingProblemSet"]] = relationship(
         back_populates="collection",
@@ -28,7 +25,5 @@ class VocabSpeakingProblemSets(Resource):
         return VocabSpeakingProblemSetsResponse(
             id=self.id,
             resource_type=self.resource_type,
-            set_limit=self.set_limit,
-            dialect=self.dialect,
             problem_sets=[ps.to_model() for ps in self.problem_sets]
         )

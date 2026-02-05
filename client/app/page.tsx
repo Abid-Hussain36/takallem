@@ -20,11 +20,11 @@ export default function Home() {
 
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string>("");
-  const [token, setToken] = useState<string | null>(null);
+
+  const course = user?.current_course !== undefined ? user?.current_course : null;
+  const dialect = user?.current_dialect !== undefined ? user?.current_dialect : null;
 
   const router = useRouter();
-
-  const currDialect = userCourseProgress?.dialect;
 
   const handleSignout = () => {
     localStorage.removeItem("token");
@@ -51,29 +51,26 @@ export default function Home() {
 
   useEffect(() => {
     const getModules = async () => {
-      setIsLoading(true);
+      const authToken = localStorage.getItem("token");
 
-      if(!user){
-        localStorage.removeItem("token");
+      if(!authToken || !user){
+        if(authToken){
+          localStorage.removeItem("token");
+        }
+
+        setError("User is not authenticated");
         setUser(null);
         setUserCourseProgress(null);
         setModules(null);
-        router.replace("/login");
-      }
-
-      const course = user!.current_course;
-      const dialect = userCourseProgress?.dialect;
-
-      // Get token from localStorage
-      const authToken = localStorage.getItem("token");
-      
-      if (!authToken) {
+        setResource(null);
         router.replace("/login");
         return;
       }
     
       if(dialect){
         try{
+          setIsLoading(true);
+
           const modulesResponse = await fetch(
             `${process.env.NEXT_PUBLIC_SERVER_URL}/modules/${course}/${dialect}`,
             {
@@ -99,8 +96,10 @@ export default function Home() {
         } finally{
           setIsLoading(false);
         }
-      } else{
+      } else if(course){
         try{
+          setIsLoading(true);
+
           const modulesResponse = await fetch(
             `${process.env.NEXT_PUBLIC_SERVER_URL}/modules/${course}`,
             {
@@ -125,26 +124,17 @@ export default function Home() {
         } finally{
           setIsLoading(false);
         }
+      } else{
+        setError("No course or dialect to fetch modules.");
+        setModules(null);
+        setResource(null);
+        router.replace("/language-selection");
       }
     }
     
-    // Fetch modules whenever user, userCourseProgress, or dialect changes
-    if(user && userCourseProgress){
-      getModules();
-    }
-  }, [user, userCourseProgress, currDialect])
+    getModules();
+  }, [router, course, dialect])
 
-  const handleBadState = () => {
-    localStorage.removeItem("token");
-    setUser(null);
-    setUserCourseProgress(null);
-    setModules(null);
-    router.replace("/login");
-  }
-
-  if (!user || !userCourseProgress || !user.current_course) {
-    return <button onClick={handleBadState}>Bad State</button>
-  }
 
   return (
     <div className={styles.container}>
@@ -172,16 +162,16 @@ export default function Home() {
             <h2>Error loading modules</h2>
             <p>{error}</p>
           </div>
-        ) : modules && modules.length > 0 ? (
+        ) : modules && modules.length > 0 && user && userCourseProgress ? (
           <div className={styles.courseContent}>
             <CourseProgress 
-              courseName={user!.current_course || "Your Course"}
-              currentModule={userCourseProgress!.curr_module}
-              totalModules={userCourseProgress!.total_modules}
+              courseName={user.current_course || "Your Course"}
+              currentModule={userCourseProgress.curr_module}
+              totalModules={userCourseProgress.total_modules}
             />
             <ModuleList 
               modules={modules}
-              currentModule={userCourseProgress!.curr_module}
+              currentModule={userCourseProgress.curr_module}
               onModuleClick={handleModuleClick}
             />
           </div>

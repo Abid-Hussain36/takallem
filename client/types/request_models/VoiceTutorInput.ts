@@ -6,5 +6,5 @@ export interface VoiceTutorInput {
     language: AvailableLanguage;
     dialect: AvailableDialect | null;
     vocab_words: VocabWordResponse[];
-    user_audio_base64: string;
+    user_audio_base64: string | null;
 }

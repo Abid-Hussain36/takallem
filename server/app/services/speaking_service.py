@@ -472,7 +472,11 @@ class SpeakingService:
 
         # 3. Create and return the output object
         output = VoiceTutorOutput(
+            transcription=final_state["transcription"],
+            pronounciation_scores=final_state["pronounciation_scores"],
+            semantic_evaluation=final_state["semantic_evaluation"],
             status=final_state["status"],
+            performance_reflection=final_state["performance_reflection"],
             feedback_text=final_state.get("feedback_text", None),
             feedback_audio_base64=final_state.get("feedback_audio_base64", None)
         )

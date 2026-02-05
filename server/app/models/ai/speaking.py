@@ -30,7 +30,11 @@ class VoiceTutorInput(BaseModel):
 
 class VoiceTutorOutput(BaseModel):
     """AI's evaluation of user's performance and feedback"""
+    transcription: str = ""
+    pronounciation_scores: PronounciationScores = PronounciationScores()
+    semantic_evaluation: SemanticEvaluation = SemanticEvaluation()
     status: Literal["pass", "fail"]
+    performance_reflection: str
     feedback_text: str | None = None
     feedback_audio_base64: str | None = None
 
@@ -54,20 +58,20 @@ class VoiceTutorState(BaseModel):
 
 
 class VoiceTutorExplainInput(BaseModel):
-    query: str = ""
-    question: str = ""
-    language: AvailableLanguage = AvailableLanguage.FRENCH
+    query: str
+    question: str
+    language: AvailableLanguage
     dialect: AvailableDialect | None = None
-    vocab_words: List[VocabWordResponse] = []
-    transcription: str = ""
-    pronounciation_scores: PronounciationScores = PronounciationScores()
-    semantic_evaluation: SemanticEvaluation = SemanticEvaluation()
+    vocab_words: List[VocabWordResponse]
+    transcription: str
+    pronounciation_scores: PronounciationScores
+    semantic_evaluation: SemanticEvaluation
     status: Literal["pass", "fail"]
     performance_reflection: str
-    previous_feedback: List[str] = []
+    previous_feedback: List[str]
 
 class VoiceTutorExplainOutput(BaseModel):
-    response_text: str = ""
+    response_text: str | None = None
 
 
 class VoiceTutorTTSInput(BaseModel):

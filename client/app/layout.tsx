@@ -1,4 +1,5 @@
 'use client'
+
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { UserProvider, useUser } from "@/context/UserContext";
@@ -59,7 +60,6 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
           const userData = await response.json();
           setUser(userData);
 
-
           // We check if the user's currently taking a course and set the progress
           if(userData.current_course){
             const getUserCourseProgressResponse = await fetch(
@@ -105,8 +105,9 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
             return;
           }
         } catch (err) {
-          console.error("Auth error:", err);
+          console.error(err);
           localStorage.removeItem("token");
+          setIsLoading(false);
           if (!isPublicRoute) router.replace("/login");
         }
       } else if(!user.current_course){
@@ -115,36 +116,49 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
         router.replace("/language-selection");
         return;
       } else if (isPublicRoute) {
-        const getUserCourseProgressResponse = await fetch(
-          `${process.env.NEXT_PUBLIC_SERVER_URL}/user-course-progress/?user_id=${user.id}&course=${user.current_course}`,
-          {
-            headers: { 'Authorization': `Bearer ${token}` }
-          }
-        )
-
-        if(getUserCourseProgressResponse.status === 404){
-          const clearUserCourseResponse = await fetch(
-            `${process.env.NEXT_PUBLIC_SERVER_URL}/user/current-course/clear`,
+        try{
+          const getUserCourseProgressResponse = await fetch(
+            `${process.env.NEXT_PUBLIC_SERVER_URL}/user-course-progress/?user_id=${user.id}&course=${user.current_course}`,
             {
-              method: "PUT",
               headers: { 'Authorization': `Bearer ${token}` }
             }
-          );
-
-          const clearUserCourseData = await clearUserCourseResponse.json();
-          setUser(clearUserCourseData);
-          
+          )
+  
+          if(getUserCourseProgressResponse.status === 404){
+            const clearUserCourseResponse = await fetch(
+              `${process.env.NEXT_PUBLIC_SERVER_URL}/user/current-course/clear`,
+              {
+                method: "PUT",
+                headers: { 'Authorization': `Bearer ${token}` }
+              }
+            );
+  
+            if(!clearUserCourseResponse.ok){
+              setIsLoading(false);
+              const errorData = await clearUserCourseResponse.json();
+              throw new Error(errorData.detail || "Error in clearing user course when progress not found.")
+            }
+  
+            const clearUserCourseData = await clearUserCourseResponse.json();
+            setUser(clearUserCourseData);
+            
+            setIsLoading(false);
+            router.replace("/language-selection");
+            return;
+          }
+  
+          const userCourseProgressData = await getUserCourseProgressResponse.json();
+          setUserCourseProgress(userCourseProgressData);
+  
           setIsLoading(false);
-          router.replace("/language-selection");
+          router.replace("/");
           return;
+        } catch(err){
+          console.error(err);
+          localStorage.removeItem("token");
+          setIsLoading(false);
+          router.replace("/login");
         }
-
-        const userCourseProgressData = await getUserCourseProgressResponse.json();
-        setUserCourseProgress(userCourseProgressData);
-
-        setIsLoading(false);
-        router.replace("/");
-        return;
       }
     };
 

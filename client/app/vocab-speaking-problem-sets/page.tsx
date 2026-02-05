@@ -4,15 +4,20 @@ import { useResource } from "@/context/ResourceContext"
 import { useUser } from "@/context/UserContext";
 import { useUserCourseProgress } from "@/context/UserCourseProgressContext";
 import { VoiceTutorInput } from "@/types/request_models/VoiceTutorInput";
-import { VoiceTutorQuestionInput } from "@/types/request_models/VoiceTutorQuestionInput";
-import { VocabSpeakingProblemSetsResponse, VocabWordResponse } from "@/types/response_models/ResourceResponse";
+import { VocabSpeakingProblemSetResponse, VocabSpeakingProblemSetsResponse, VocabWordResponse } from "@/types/response_models/ResourceResponse";
 import { VoiceTutorOutput } from "@/types/response_models/VoiceTutorOutput";
-import { VoiceTutorQuestionOutput } from "@/types/response_models/VoiceTutorQuestionOutput";
 import { useRouter } from "next/navigation";
 import { useState, useEffect, useRef } from "react";
 import styles from './VocabSpeakingProblemSets.module.css';
+import { AvailableDialect, Gender } from "@/types/enums";
+import { VoiceTutorTTSInput } from "@/types/request_models/VoiceTutorTTSInput";
+import { VoiceTutorTTSOutput } from "@/types/response_models/VoiceTutorTTSOutput";
+import { VoiceTutorExplainInput } from "@/types/request_models/VoiceTutorExplainInput";
+import { VoiceTutorExplainOutput } from "@/types/response_models/VoiceTutorExplainOutput";
 
 type ProgressStatus = 'unanswered' | 'current' | 'correct';
+type AudioMode = 'listen' | 'record';
+type ChatMessage = { sender: 'tutor' | 'student', text: string };
 
 const VocabSpeakingProblemSets = () => {
     // Router
@@ -27,27 +32,28 @@ const VocabSpeakingProblemSets = () => {
     const [isLoading, setIsLoading] = useState<boolean>(false);
     const [error, setError] = useState<string>("");
     const [progressStatus, setProgressStatus] = useState<ProgressStatus[]>([]);
-
-    // Audio States
-    const [audioBlob, setAudioBlob] = useState<Blob | null>(null); // A Blob is a chunk of binary data
-    const [isRecording, setIsRecording] = useState<boolean>(false);
-    const [isPlayingQuestion, setIsPlayingQuestion] = useState<boolean>(false);
-    const [isPlayingFeedback, setIsPlayingFeedback] = useState<boolean>(false);
-
-    // Feedback States:
-    const [tutorOutput, setTutorOutput] = useState<VoiceTutorOutput | null>(null);
-    const [showFeedback, setShowFeedback] = useState<boolean>(false);
     const [passed, setPassed] = useState<boolean>(false);
-    
-    // Tutor Audio Refs
-    const questionAudioRef = useRef<HTMLAudioElement | null>(null);
-    const feedbackAudioRef = useRef<HTMLAudioElement | null>(null);
 
-    // Audio Recording Refs
+    // Audio Recording States
+    const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
     const mediaRecorderRef = useRef<MediaRecorder | null>(null);
     const audioChunksRef = useRef<Blob[]>([]);
 
-    if (!resource || !resource.resource || !userCourseProgress) {
+    // Audio Refs
+    const playAudioRef = useRef<HTMLAudioElement | null>(null);
+
+    // Audio Boolean States
+    const [isRecording, setIsRecording] = useState<boolean>(false);
+    const [isPlayingAudio, setIsPlayingAudio] = useState<boolean>(false);
+    const [mode, setMode] = useState<AudioMode>("listen");
+
+    // Feedback States
+    const [tutorOutput, setTutorOutput] = useState<VoiceTutorOutput | null>(null);
+    const [questionAnswered, setQuestionAnswered] = useState<boolean>(false);
+    const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
+    const [query, setQuery] = useState("");
+
+    if (!resource || !resource.resource || !userCourseProgress || !user) {
         return (
             <div className={styles.loadingContainer}>
                 <div className={styles.spinner}></div>
@@ -56,35 +62,21 @@ const VocabSpeakingProblemSets = () => {
         );
     }
 
-    // VocabSpeakingProblemSets Data
-    const problemSets = resource.resource as VocabSpeakingProblemSetsResponse;
-    const userDialect = userCourseProgress?.dialect;
-    const collectionDialect = problemSets.dialect;
-
-    console.log("Collection dialect:", collectionDialect);
-    console.log("User dialect:", userDialect);
-
-    // Filter by dialect: only show if collection dialect matches user's dialect or is null (universal)
-    if (collectionDialect !== null && collectionDialect !== undefined && collectionDialect !== userDialect) {
-        console.log("Dialect mismatch - collection not available for user's dialect");
-        return (
-            <div className={styles.loadingContainer}>
-                <div className={styles.spinner}></div>
-                <p className={styles.loadingText}>
-                    This problem set is not available for your selected dialect ({userDialect}).
-                </p>
-            </div>
-        );
-    }
-
-    console.log("Dialect check passed - showing problem sets for", collectionDialect || "all dialects");
-
     // UserCourseProgress Fields
-    const userGender = user!.gender;
     const problemCounter: number = userCourseProgress.problem_counter;
-    
-    // Find problem set for user's gender
-    const problemSet = problemSets.problem_sets.find(pSet => pSet.gender === userGender);
+
+    // Language data
+    const language = userCourseProgress.language;
+    const dialect = userCourseProgress?.dialect;
+    const gender = user.gender;
+
+    // VocabSpeakingProblemSets Data
+    const vocabSpeakingProblemSets = resource.resource as VocabSpeakingProblemSetsResponse;
+    const problemSets = vocabSpeakingProblemSets.problem_sets;
+
+    const problemSet = problemSets.find(ps => 
+        ps.dialect === dialect && (!ps.gender || ps.gender === gender)
+    ) ?? null;
 
     // Safety check: ensure problem set exists
     if (!problemSet || !problemSet.problems || problemSet.problems.length === 0) {
@@ -92,59 +84,21 @@ const VocabSpeakingProblemSets = () => {
             <div className={styles.loadingContainer}>
                 <div className={styles.spinner}></div>
                 <p className={styles.loadingText}>
-                    No speaking problems available for your gender ({userGender}).
+                    No speaking problems available for your gender and dialect combination: {gender}, {dialect}.
                 </p>
             </div>
         );
     }
 
     const problems = problemSet.problems;
-    
-    // Stopping Variables
-    const problemCounterStop = problemSet.problem_count - 1;
-    const exerciseComplete = problemCounter >= problemCounterStop;
 
-    // Reset problem counter if out of bounds
-    useEffect(() => {
-        const resetCounterIfNeeded = async () => {
-            if (problemCounter < 0 || problemCounter >= problems.length) {
-                console.warn("Problem counter out of bounds. Resetting...", {
-                    problemCounter,
-                    problemsLength: problems.length
-                });
-                
-                const authToken = localStorage.getItem("token");
-                try {
-                    const response = await fetch(
-                        `${process.env.NEXT_PUBLIC_SERVER_URL}/user-course-progress/problem_counter/clear/${userCourseProgress.id}`,
-                        {
-                            method: "PUT",
-                            headers: {
-                                'Authorization': `Bearer ${authToken}`,
-                                'Content-Type': 'application/json'
-                            }
-                        }
-                    );
-
-                    if (response.ok) {
-                        const updated = await response.json();
-                        setUserCourseProgress(updated);
-                    }
-                } catch (err) {
-                    console.error("Failed to reset problem counter:", err);
-                }
-            }
-        };
-
-        resetCounterIfNeeded();
-    }, [problemCounter, problems.length]);
-
-    // Safety check: if problem doesn't exist yet (waiting for reset), show loading
-    if (!problems[problemCounter]) {
+    if (problemCounter >= problems.length || problemCounter < 0) {
         return (
             <div className={styles.loadingContainer}>
                 <div className={styles.spinner}></div>
-                <p className={styles.loadingText}>Initializing exercise...</p>
+                <p className={styles.loadingText}>
+                    Problem counter out of sync. Resetting...
+                </p>
             </div>
         );
     }
@@ -153,15 +107,15 @@ const VocabSpeakingProblemSets = () => {
     const question: string = problem.question;
     const vocabWords: VocabWordResponse[] = problem.vocab_words;
 
+    // Stopping Variables
+    const problemCounterStop = problemSet.problem_count - 1;
+    const exerciseComplete = problemCounter >= problemCounterStop;
+    
+
     useEffect(() => {
-        const handleQuestionEnd = () => setIsPlayingQuestion(false)
-        const handleFeedbackEnd = () => setIsPlayingFeedback(false)
-
-        const questionAudio = questionAudioRef.current;
-        const feedbackAudio = feedbackAudioRef.current;
-
-        questionAudio?.addEventListener("ended", handleQuestionEnd);
-        feedbackAudio?.addEventListener("ended", handleFeedbackEnd)
+        const handlePlayAudioEnd = () => setIsPlayingAudio(false);
+        const audioPlayer = playAudioRef.current;
+        audioPlayer?.addEventListener("ended", handlePlayAudioEnd);
 
         // When we mount this component, we setup its progress bar based on current problem
         const initialProgressStatus: ProgressStatus[] = problems.map((_, idx) => {
@@ -177,41 +131,17 @@ const VocabSpeakingProblemSets = () => {
         setProgressStatus(initialProgressStatus)
 
         return () => {
-            questionAudio?.removeEventListener("ended", handleQuestionEnd);
-            feedbackAudio?.removeEventListener("ended", handleFeedbackEnd);
+            audioPlayer?.removeEventListener("ended", handlePlayAudioEnd);
         }
     }, []);
 
 
-    useEffect(() => {
-        // We reset the recorded audio and tutor response states
-        setAudioBlob(null);
-        setTutorOutput(null);
-        setShowFeedback(false);
-        setPassed(false);
-
-        if(problemCounter < problems.length){
-            // We set the current problem cell to gray.
-            const newStatus = [...progressStatus]
-            newStatus[problemCounter] = "current"
-            setProgressStatus(newStatus)
-        }
-    }, [problemCounter]);
-
-
-    useEffect(() => {
-        if (error) {
-            // Sets a timer to clear the error after 5 seconds
-            const timer = setTimeout(() => setError(''), 5000);
-            
-            // Clean up the timer if the component unmounts
-            return () => clearTimeout(timer);
-        }
-    }, [error]);  // Run when error changes
-
-
     const startRecording = async() => {
-        try{
+        try{ 
+            // We clear the previous audio
+            setAudioBlob(null);
+            audioChunksRef.current = [];
+
             // 1. We ask for permission to use user microphone and get audio from it as a stream
             const stream = await navigator.mediaDevices.getUserMedia({
                 audio: {
@@ -226,18 +156,17 @@ const VocabSpeakingProblemSets = () => {
             });
 
             mediaRecorderRef.current = mediaRecorder;
-            audioChunksRef.current = [];
             
             // 3. When data is available from the media recorder, we fire a function to capture the data in the audioChunksRef
             mediaRecorder.ondataavailable = (event) => {
                 if(event.data.size > 0){
-                    audioChunksRef.current.push(event.data);
+                    audioChunksRef.current.push(event.data); // We're basically pushing a small audio blob
                 }
             }
 
             // 4. When the mediaRecorder is stopped, we create a blob with recorded data and stop all tracks
             mediaRecorder.onstop = () => {
-                // We create a blob with all the chunks we got
+                // We create a blob with all the chunks (blobs) we got
                 const blob = new Blob(audioChunksRef.current, {
                     type: "audio/webm"
                 });
@@ -251,8 +180,7 @@ const VocabSpeakingProblemSets = () => {
             mediaRecorder.start();
             setIsRecording(true);
         } catch(err){
-            console.log("Microphone error: ", err);
-            setError("Please allow microphone access to record your answer.")
+            setError(`Please allow microphone access to record your answer.`)
         }
     }
 
@@ -266,54 +194,73 @@ const VocabSpeakingProblemSets = () => {
     }
 
 
-    const handleRecordClick = () => {
-        // Starts or stops recording based on isRecording
-        if(isRecording){
-            stopRecording();
-        } else{
-            startRecording();
+    const handleModeToggle = (newMode: AudioMode) => {
+        // Don't allow mode switch while recording
+        if (isRecording && newMode === 'listen') {
+            setError("Please stop recording before switching to listen mode.");
+            return;
+        }
+        setMode(newMode);
+    }
+
+    const handleAudioButtonClick = () => {
+        if (mode === 'listen') {
+            // Play the question audio
+            if (!isPlayingAudio) {
+                playAudio(question);
+            }
+        } else if (mode === 'record') {
+            // Start or stop recording
+            if (isRecording) {
+                stopRecording();
+            } else {
+                startRecording();
+            }
         }
     }
 
 
-    const submitAudio = async() => {
+    const handleSubmitAudio = async() => {
+        // Submits the recorded audio to get back the tutor response
         if(!audioBlob){
             setError("Please record your answer first!");
             return;
         }
 
+        const authToken = localStorage.getItem("token");
+        if (!authToken) {
+            setError("Authentication required. Please log in.");
+            router.replace("/login");
+            return;
+        }
+
         setIsLoading(true);
-        setError(""); // Reset error to capture a new one from API
+        setMode("listen");
 
         try{
             const reader = new FileReader();
             
-            // We read the audio blob and get back its base64 string
+            // 1. We read the audio blob and get back its base64 string
             const base64Audio = await new Promise<string>((resolve, reject) => {
                 reader.onloadend = () => {
-                    // When we finish reading the loaded file, we get the base64 portion from the result string
                     const base64 = (reader.result as string).split(",")[1];
                     resolve(base64);
                 }
-
                 reader.onerror = reject;
-
-                // Actually initiates the file reading process
                 reader.readAsDataURL(audioBlob);
             })
 
-            const authToken = localStorage.getItem("token");
-
+            // 2. We get back the voice tutor response
             const requestBody: VoiceTutorInput = {
                 question: question,
-                language: userCourseProgress!.language,
-                dialect: userCourseProgress?.dialect ?? null,
+                language: language,
+                dialect: dialect ?? null,
                 vocab_words: vocabWords,
                 user_audio_base64: base64Audio
             }
 
             const generatedResponse = await fetch(
-                `${process.env.NEXT_PUBLIC_SERVER_URL}/voice-tutor/generate-response`,
+                `${process.env.NEXT_PUBLIC_SERVER_URL}/speaking/generate-response`,
                 {
                     method: "POST",
                     headers: {
@@ -326,29 +273,43 @@ const VocabSpeakingProblemSets = () => {
 
             if(!generatedResponse.ok){
                 const errorData = await generatedResponse.json();
-                throw new Error(`Failed to generate feedback response: ${errorData.detail}`);
+                throw new Error(errorData.detail || "Failed to generate feedback response");
             }
 
             const generatedFeedback: VoiceTutorOutput = await generatedResponse.json();
 
             setTutorOutput(generatedFeedback);
-            setShowFeedback(true);
+            setQuestionAnswered(true);
 
+            // 3. Update the progress bar if we had a correct answer
             if(generatedFeedback.status === "pass"){
                 setPassed(true);
-
                 const newStatus = [...progressStatus];
                 newStatus[problemCounter] = "correct";
                 setProgressStatus(newStatus);
-            } else{
-                setAudioBlob(null);
             }
 
-            // This plays the feedback audio
-            if(generatedFeedback.feedback_audio && feedbackAudioRef.current){
-                feedbackAudioRef.current.src = generatedFeedback.feedback_audio;
-                setIsPlayingFeedback(true);
-                feedbackAudioRef.current.play();
+            // 4. Set initial chat message with tutor feedback
+            const generatedFeedbackText = generatedFeedback.feedback_text;
+            if(generatedFeedbackText){
+                setChatMessages([{ sender: 'tutor', text: generatedFeedbackText }]);
+            }
+
+            // 5. Play feedback audio
+            if(generatedFeedback.feedback_audio_base64 && playAudioRef.current){
+                const audio = playAudioRef.current;
+
+                // We make sure to pause the previous audio if present and reset to the beginning of the audio file
+                audio.pause();
+                audio.currentTime = 0;
+
+                audio.src = generatedFeedback.feedback_audio_base64;
+                setIsPlayingAudio(true);
+                try{
+                    await audio.play();
+                } catch(err){
+                    setIsPlayingAudio(false);
+                }
             }
         } catch(err){
             setError(err instanceof Error ? err.message : "Failed to generate feedback response");
@@ -358,16 +319,122 @@ const VocabSpeakingProblemSets = () => {
     }
 
 
+    const handleAskQuestion = async () => {
+        // Answers the passed in query regarding user performance on a question
+        if (!query.trim()) {
+            setError("Please enter a question.");
+            return;
+        }
+
+        if (!tutorOutput) {
+            setError("No tutor feedback available yet.");
+            return;
+        }
+
+        const authToken = localStorage.getItem("token");
+        if (!authToken) {
+            setError("Authentication required. Please log in.");
+            router.replace("/login");
+            return;
+        }
+
+        setIsLoading(true);
+
+        try{
+            // 1. Build the previous feedback array from chat messages
+            const previousFeedback = chatMessages.map(msg => 
+                `${msg.sender === 'tutor' ? 'Tutor' : 'Student'}: ${msg.text}`
+            );
+
+            // 2. We generate the response to user query
+            const explainRequest: VoiceTutorExplainInput = {
+                query: query,
+                question: question,
+                language: language,
+                dialect: dialect ?? null,
+                vocab_words: vocabWords,
+                transcription: tutorOutput.transcription,
+                pronounciation_scores: tutorOutput.pronounciation_scores,
+                semantic_evaluation: tutorOutput.semantic_evaluation,
+                status: tutorOutput.status as "pass" | "fail",
+                performance_reflection: tutorOutput.performance_reflection,
+                previous_feedback: previousFeedback
+            }
+
+            const explainResponse = await fetch(
+                `${process.env.NEXT_PUBLIC_SERVER_URL}/speaking/explain`,
+                {
+                    method: "POST",
+                    headers: {
+                        "Authorization": `Bearer ${authToken}`,
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify(explainRequest)
+                }
+            );
+
+            if(!explainResponse.ok){
+                const errorData = await explainResponse.json();
+                throw new Error(errorData.detail || "Failed to generate explain response");
+            }
+
+            const explainData: VoiceTutorExplainOutput = await explainResponse.json();
+            const responseText = explainData.response_text;
+            
+            if(!responseText){
+                throw new Error("Did not get back response text for speaking explain");
+            }
+
+            // 3. Add the student question and tutor response to chat
+            const newMessages: ChatMessage[] = [
+                ...chatMessages,
+                { sender: 'student', text: query },
+                { sender: 'tutor', text: responseText }
+            ];
+            setChatMessages(newMessages);
+            setQuery(""); // Clear the input
+
+            // 4. Play the explain response audio
+            playAudio(responseText);
+        } catch(err){
+            setError(err instanceof Error ? err.message : "Failed to generate explain");
+        } finally{
+            setIsLoading(false);
+        }
+    }
+
+
+    const resetQuestion = () => {
+        // We reset our previous data
+        // Can be used to retry the question
+        setError("");
+        setAudioBlob(null);
+        setChatMessages([]);
+        setTutorOutput(null);
+        setQuestionAnswered(false);
+        setQuery("");
+        setMode("listen");
+        audioChunksRef.current = [];
+    }
+
+
     const handleHomeNav = async () => {
-        if(!exerciseComplete && progressStatus[problemCounter] === "correct"){
+        // Handles navigation to home page in middle of exercise.
+        // We increment the problem counter before nav only if we answered non-end problem correctly.
+        if(!exerciseComplete && passed){
+            const authToken = localStorage.getItem("token");
+            if (!authToken) {
+                setError("Authentication required. Please log in.");
+                router.replace("/login");
+                return;
+            }
+
             setIsLoading(true);
 
             try{
-                const authToken = localStorage.getItem("token");
-
-                // We incremement the problem counter
+                // We increment the problem counter
                 const incrementProblemCounterResponse = await fetch(
-                    `${process.env.NEXT_PUBLIC_SERVER_URL}/user-course-progress/problem_counter/increment/${userCourseProgress!.id}`,
+                    `${process.env.NEXT_PUBLIC_SERVER_URL}/user-course-progress/problem-counter/increment/${userCourseProgress!.id}`,
                     {
                         method: "PUT",
                         headers: {"Authorization": `Bearer ${authToken}`}
@@ -376,7 +443,7 @@ const VocabSpeakingProblemSets = () => {
 
                 if(!incrementProblemCounterResponse.ok){
                     const errorData = await incrementProblemCounterResponse.json();
-                    throw new Error(`Error in incrementing problem counter: ${errorData.detail}`)
+                    throw new Error(errorData.detail || "Failed to increment problem counter")
                 }
 
                 const result = await incrementProblemCounterResponse.json();
@@ -394,14 +461,22 @@ const VocabSpeakingProblemSets = () => {
 
 
     const handleNext = async () => {
-        if(exerciseComplete && progressStatus[problemCounter] === "correct"){
-            const authToken = localStorage.getItem("token");
+        // Handles going to the next problem or completing the exercise.
+        const authToken = localStorage.getItem("token");
+        if (!authToken) {
+            setError("Authentication required. Please log in.");
+            router.replace("/login");
+            return;
+        }
+
+        if(exerciseComplete && passed){
+            resetQuestion();
             setIsLoading(true);
 
             try{
                 // 1. Reset the problem counter
                 const resetProblemCounterResponse = await fetch(
-                    `${process.env.NEXT_PUBLIC_SERVER_URL}/user-course-progress/problem_counter/clear/${userCourseProgress!.id}`,
+                    `${process.env.NEXT_PUBLIC_SERVER_URL}/user-course-progress/problem-counter/clear/${userCourseProgress!.id}`,
                     {
                         method: "PUT",
                         headers: {"Authorization": `Bearer ${authToken}`}
@@ -410,7 +485,7 @@ const VocabSpeakingProblemSets = () => {
 
                 if(!resetProblemCounterResponse.ok){
                     const errorData = await resetProblemCounterResponse.json();
-                    throw new Error(`Error when resetting problem counter: ${errorData}`);
+                    throw new Error(errorData.detail || "Failed to reset problem counter");
                 }
 
                 let result = await resetProblemCounterResponse.json();
@@ -418,7 +493,7 @@ const VocabSpeakingProblemSets = () => {
                 // 2. Update current module if applicable
                 if(userCourseProgress!.curr_module === resource.number){
                     const incrementCurrModuleResponse = await fetch(
-                        `${process.env.NEXT_PUBLIC_SERVER_URL}/user-course-progress/curr_module/increment/${userCourseProgress!.id}`,
+                        `${process.env.NEXT_PUBLIC_SERVER_URL}/user-course-progress/curr-module/increment/${userCourseProgress!.id}`,
                         {
                             method: "PUT",
                             headers: {"Authorization": `Bearer ${authToken}`}
@@ -427,7 +502,7 @@ const VocabSpeakingProblemSets = () => {
 
                     if(!incrementCurrModuleResponse.ok){
                         const errorData = await incrementCurrModuleResponse.json();
-                        throw new Error(errorData.detail);
+                        throw new Error(errorData.detail || "Failed to increment current module");
                     }
 
                     result = await incrementCurrModuleResponse.json();
@@ -439,18 +514,18 @@ const VocabSpeakingProblemSets = () => {
                 setResource(null);
                 router.replace("/");
             } catch(err){
-                setError(err instanceof Error ? err.message : "Error in handling next for Speaking Problems")
+                setError(err instanceof Error ? err.message : "Error completing module")
             } finally{
                 setIsLoading(false);
             }
-        } else if(!exerciseComplete && progressStatus[problemCounter] === "correct"){
-            try{
-                const authToken = localStorage.getItem("token");
-                setIsLoading(true);
+        } else if(!exerciseComplete && passed){
+            resetQuestion();
+            setIsLoading(true);
 
-                // We incremement the problem counter
+            try{
+                // We increment the problem counter
                 const incrementProblemCounterResponse = await fetch(
-                    `${process.env.NEXT_PUBLIC_SERVER_URL}/user-course-progress/problem_counter/increment/${userCourseProgress!.id}`,
+                    `${process.env.NEXT_PUBLIC_SERVER_URL}/user-course-progress/problem-counter/increment/${userCourseProgress!.id}`,
                     {
                         method: "PUT",
                         headers: {"Authorization": `Bearer ${authToken}`}
@@ -459,11 +534,12 @@ const VocabSpeakingProblemSets = () => {
 
                 if(!incrementProblemCounterResponse.ok){
                     const errorData = await incrementProblemCounterResponse.json();
-                    throw new Error(`Error in incrementing problem counter: ${errorData.detail}`)
+                    throw new Error(errorData.detail || "Failed to increment problem counter")
                 }
 
                 const result = await incrementProblemCounterResponse.json();
                 setUserCourseProgress(result);
+                setPassed(false);
             } catch(err){
                 setError(err instanceof Error ? err.message : "Failed to increment problem counter");
             } finally{
@@ -473,19 +549,25 @@ const VocabSpeakingProblemSets = () => {
     }
 
 
-    const playQuestionAudio = async() => {
-        setIsPlayingQuestion(true);
+    const playAudio = async(text: string) => {
+        // Plays the passed in audio
+        const authToken = localStorage.getItem("token");
+        if (!authToken) {
+            setError("Authentication required. Please log in.");
+            router.replace("/login");
+            return;
+        }
+
+        setIsPlayingAudio(true);
         setIsLoading(true);
 
         try{
-            const authToken = localStorage.getItem("token");
-
-            const requestBody: VoiceTutorQuestionInput = {
-                question: question
+            const requestBody: VoiceTutorTTSInput = {
+                text: text
             }
 
-            const speakQuestionResponse = await fetch(
-                `${process.env.NEXT_PUBLIC_SERVER_URL}/voice-tutor/speak_question`,
+            const speakResponse = await fetch(
+                `${process.env.NEXT_PUBLIC_SERVER_URL}/speaking/speak-question`,
                 {
                     method: "POST",
                     headers: {
@@ -496,29 +578,39 @@ const VocabSpeakingProblemSets = () => {
                 }
             );
 
-            if(!speakQuestionResponse.ok){
-                const errorData = await speakQuestionResponse.json();
-                throw new Error(`Error in getting question audio: ${errorData.detail}`)
+            if(!speakResponse.ok){
+                const errorData = await speakResponse.json();
+                throw new Error(errorData.detail || "Failed to get audio")
             }
 
-            const speakQuestionData: VoiceTutorQuestionOutput = await speakQuestionResponse.json();
+            const speakData: VoiceTutorTTSOutput = await speakResponse.json();
             
-            if(questionAudioRef.current && speakQuestionData.question_audio){
-                questionAudioRef.current.src = speakQuestionData.question_audio;
-                questionAudioRef.current.play();
+            if(playAudioRef.current && speakData.response_audio_base64){
+                const audio = playAudioRef.current;
+
+                // We make sure to pause the previous audio if present and reset to the beginning of the audio file
+                audio.pause();
+                audio.currentTime = 0;
+
+                audio.src = speakData.response_audio_base64;
+                try{
+                    await audio.play();
+                } catch(err){
+                    setIsPlayingAudio(false);
+                }
             }
         } catch(err){
-            setError(err instanceof Error ? err.message : "Failed to get question audio to play")
+            setError(err instanceof Error ? err.message : "Failed to get and play audio");
         } finally{
             setIsLoading(false);
         }
     }
 
+
     return(
         <div className={styles.container}>
             {/* Hidden Audio Elements */}
-            <audio ref={questionAudioRef} />
-            <audio ref={feedbackAudioRef} />
+            <audio ref={playAudioRef} />
 
             {/* Header */}
             <div className={styles.header}>
@@ -545,114 +637,108 @@ const VocabSpeakingProblemSets = () => {
 
             {/* Main Content */}
             <div className={styles.mainContent}>
-                {/* Question Section */}
-                <div className={styles.questionSection}>
-                    <h2 className={styles.questionLabel}>Question</h2>
-                    <p className={styles.questionText}>{question}</p>
-                    
-                    {/* Question Audio Button */}
-                    <div className={styles.audioPlayerContainer}>
-                        <button 
-                            className={styles.audioButton}
-                            onClick={playQuestionAudio}
-                            disabled={isLoading || isPlayingQuestion}
-                        >
-                            {isPlayingQuestion ? (
-                                <svg viewBox="0 0 24 24" fill="currentColor">
-                                    <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z"/>
-                                </svg>
-                            ) : (
-                                <svg viewBox="0 0 24 24" fill="currentColor">
-                                    <path d="M8 5v14l11-7z"/>
-                                </svg>
-                            )}
-                        </button>
-                        <div className={styles.waveContainer}>
-                            <div className={`${styles.wave} ${isPlayingQuestion ? styles.active : ''}`}></div>
-                            <div className={`${styles.wave} ${isPlayingQuestion ? styles.active : ''}`}></div>
-                            <div className={`${styles.wave} ${isPlayingQuestion ? styles.active : ''}`}></div>
-                            <div className={`${styles.wave} ${isPlayingQuestion ? styles.active : ''}`}></div>
-                        </div>
-                    </div>
-                </div>
+                {!questionAnswered ? (
+                    /* Pre-Answer View */
+                    <div className={styles.questionView}>
+                        <h2 className={styles.instructionText}>
+                            Listen to the question and record your response.
+                        </h2>
 
-                {/* Vocabulary Words */}
-                <div className={styles.vocabSection}>
-                    <h3 className={styles.vocabLabel}>Vocabulary to Use</h3>
-                    <div className={styles.vocabGrid}>
-                        {vocabWords.map((vw, idx) => (
-                            <div key={idx} className={styles.vocabCard}>
-                                <div className={styles.vocabWord}>{vw.word}</div>
-                                <div className={styles.vocabMeaning}>{vw.meaning}</div>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-
-                {/* Recording Section */}
-                <div className={styles.recordingSection}>
-                    <h3 className={styles.sectionTitle}>Your Answer</h3>
-                    
-                    <div className={styles.recordButtonContainer}>
-                        <button 
-                            className={`${styles.recordButton} ${isRecording ? styles.recording : ''}`}
-                            onClick={handleRecordClick}
-                            disabled={showFeedback && passed}
-                        >
-                            {isRecording ? (
-                                <svg viewBox="0 0 24 24" fill="currentColor">
-                                    <rect x="6" y="6" width="12" height="12" rx="2"/>
+                        {/* Mode Toggle */}
+                        <div className={styles.modeToggle}>
+                            <button
+                                className={`${styles.modeButton} ${mode === 'listen' ? styles.active : ''}`}
+                                onClick={() => handleModeToggle('listen')}
+                                disabled={isLoading}
+                            >
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <polygon points="5 3 19 12 5 21 5 3"/>
                                 </svg>
-                            ) : (
-                                <svg viewBox="0 0 24 24" fill="currentColor">
-                                    <path d="M12 15a3 3 0 100-6 3 3 0 000 6z"/>
+                                Listen
+                            </button>
+                            <button
+                                className={`${styles.modeButton} ${mode === 'record' ? styles.active : ''}`}
+                                onClick={() => handleModeToggle('record')}
+                                disabled={isLoading}
+                            >
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <circle cx="12" cy="12" r="3"/>
                                     <path d="M19 10v4a7 7 0 01-14 0v-4M12 19v4M8 23h8"/>
                                 </svg>
-                            )}
-                        </button>
-                        
-                        {/* Wave Animation for Recording */}
-                        <div className={styles.recordWaveContainer}>
-                            <div className={`${styles.recordWave} ${isRecording ? styles.active : ''}`}></div>
-                            <div className={`${styles.recordWave} ${isRecording ? styles.active : ''}`}></div>
-                            <div className={`${styles.recordWave} ${isRecording ? styles.active : ''}`}></div>
-                            <div className={`${styles.recordWave} ${isRecording ? styles.active : ''}`}></div>
+                                Record
+                            </button>
                         </div>
+
+                        {/* Main Audio Button */}
+                        <div className={styles.audioButtonContainer}>
+                            <button
+                                className={`${styles.mainAudioButton} ${
+                                    mode === 'listen' ? styles.listenMode : styles.recordMode
+                                } ${isRecording ? styles.recording : ''} ${isPlayingAudio ? styles.playing : ''}`}
+                                onClick={handleAudioButtonClick}
+                                disabled={isLoading}
+                            >
+                                {mode === 'listen' ? (
+                                    isPlayingAudio ? (
+                                        <div className={styles.waveAnimation}>
+                                            <div className={styles.wave}></div>
+                                            <div className={styles.wave}></div>
+                                            <div className={styles.wave}></div>
+                                            <div className={styles.wave}></div>
+                                        </div>
+                                    ) : (
+                                        <svg viewBox="0 0 24 24" fill="currentColor">
+                                            <polygon points="5 3 19 12 5 21 5 3"/>
+                                        </svg>
+                                    )
+                                ) : (
+                                    isRecording ? (
+                                        <svg viewBox="0 0 24 24" fill="currentColor">
+                                            <rect x="6" y="6" width="12" height="12" rx="2"/>
+                                        </svg>
+                                    ) : (
+                                        <svg viewBox="0 0 24 24" fill="currentColor">
+                                            <circle cx="12" cy="12" r="8"/>
+                                        </svg>
+                                    )
+                                )}
+                            </button>
+                            <p className={styles.audioButtonHint}>
+                                {mode === 'listen' 
+                                    ? (isPlayingAudio ? 'Playing question...' : 'Click to listen to the question')
+                                    : (isRecording ? 'Click to stop recording' : (audioBlob ? 'Click to re-record' : 'Click to start recording'))}
+                            </p>
+                        </div>
+
+                        {/* Submit Button */}
+                        {audioBlob && (
+                            <button
+                                className={styles.submitButton}
+                                onClick={handleSubmitAudio}
+                                disabled={isLoading}
+                            >
+                                {isLoading ? (
+                                    <>
+                                        <div className={styles.buttonSpinner}></div>
+                                        Evaluating...
+                                    </>
+                                ) : (
+                                    <>
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                            <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/>
+                                        </svg>
+                                        Submit Answer
+                                    </>
+                                )}
+                            </button>
+                        )}
                     </div>
-
-                    <p className={styles.recordingHint}>
-                        {isRecording ? 'Click again to stop recording' : 'Click to start recording your answer'}
-                    </p>
-
-                    {/* Submit Button */}
-                    {audioBlob && !showFeedback && (
-                        <button 
-                            className={styles.submitButton}
-                            onClick={submitAudio}
-                            disabled={isLoading}
-                        >
-                            {isLoading ? (
-                                <>
-                                    <div className={styles.buttonSpinner}></div>
-                                    Evaluating...
-                                </>
-                            ) : (
-                                <>
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                        <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/>
-                                    </svg>
-                                    Submit Answer
-                                </>
-                            )}
-                        </button>
-                    )}
-                </div>
-
-                {/* Feedback Section */}
-                {showFeedback && tutorOutput && (
-                    <div className={styles.feedbackSection}>
-                        <div className={`${styles.statusBadge} ${styles[tutorOutput.status]}`}>
-                            {tutorOutput.status === 'pass' ? (
+                ) : (
+                    /* Post-Answer View */
+                    <div className={styles.answerView}>
+                        {/* Status Badge */}
+                        <div className={`${styles.statusBadge} ${styles[tutorOutput?.status || 'fail']}`}>
+                            {tutorOutput?.status === 'pass' ? (
                                 <>
                                     <svg viewBox="0 0 24 24" fill="currentColor">
                                         <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
@@ -669,41 +755,93 @@ const VocabSpeakingProblemSets = () => {
                             )}
                         </div>
 
-                        <div className={styles.feedbackContent}>
-                            <h4 className={styles.feedbackLabel}>Feedback</h4>
-                            <p className={styles.feedbackText}>{tutorOutput.feedback_text}</p>
-                            
-                            {/* Feedback Audio Button */}
-                            {tutorOutput.feedback_audio && (
-                                <div className={styles.feedbackAudioContainer}>
-                                    <button 
-                                        className={styles.feedbackAudioButton}
-                                        onClick={() => {
-                                            if (feedbackAudioRef.current) {
-                                                if (isPlayingFeedback) {
-                                                    feedbackAudioRef.current.pause();
-                                                    setIsPlayingFeedback(false);
-                                                } else {
-                                                    feedbackAudioRef.current.play();
-                                                    setIsPlayingFeedback(true);
-                                                }
-                                            }
-                                        }}
-                                    >
-                                        {isPlayingFeedback ? (
-                                            <svg viewBox="0 0 24 24" fill="currentColor">
-                                                <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z"/>
-                                            </svg>
-                                        ) : (
-                                            <svg viewBox="0 0 24 24" fill="currentColor">
-                                                <path d="M8 5v14l11-7z"/>
-                                            </svg>
-                                        )}
-                                        <span>{isPlayingFeedback ? 'Pause' : 'Listen to'} Feedback</span>
-                                    </button>
-                                </div>
-                            )}
+                        {/* Question Section */}
+                        <div className={styles.questionSection}>
+                            <h3 className={styles.sectionTitle}>Question</h3>
+                            <div className={styles.questionCard} onClick={() => playAudio(question)}>
+                                <p className={styles.questionText}>{question}</p>
+                                <button className={styles.playIconButton}>
+                                    <svg viewBox="0 0 24 24" fill="currentColor">
+                                        <polygon points="5 3 19 12 5 21 5 3"/>
+                                    </svg>
+                                </button>
+                            </div>
                         </div>
+
+                        {/* Vocabulary Words */}
+                        <div className={styles.vocabSection}>
+                            <h3 className={styles.sectionTitle}>Vocabulary Words</h3>
+                            <div className={styles.vocabGrid}>
+                                {vocabWords.map((vw, idx) => (
+                                    <div key={idx} className={styles.vocabCard}>
+                                        <div className={styles.vocabWord}>{vw.word}</div>
+                                        <div className={styles.vocabMeaning}>{vw.meaning}</div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Chat Interface */}
+                        <div className={styles.chatSection}>
+                            <h3 className={styles.sectionTitle}>Feedback & Questions</h3>
+                            <div className={styles.chatMessages}>
+                                {chatMessages.map((message, idx) => (
+                                    <div
+                                        key={idx}
+                                        className={`${styles.chatMessage} ${
+                                            message.sender === 'tutor' ? styles.tutorMessage : styles.studentMessage
+                                        }`}
+                                        onClick={() => message.sender === 'tutor' && playAudio(message.text)}
+                                    >
+                                        <p className={styles.messageText}>{message.text}</p>
+                                        {message.sender === 'tutor' && (
+                                            <button className={styles.playMessageButton}>
+                                                <svg viewBox="0 0 24 24" fill="currentColor">
+                                                    <polygon points="5 3 19 12 5 21 5 3"/>
+                                                </svg>
+                                            </button>
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
+
+                            {/* Chat Input */}
+                            <div className={styles.chatInputContainer}>
+                                <input
+                                    className={styles.chatInput}
+                                    type="text"
+                                    value={query}
+                                    onChange={(e) => setQuery(e.target.value)}
+                                    onKeyPress={(e) => e.key === 'Enter' && !isLoading && query.trim() && handleAskQuestion()}
+                                    placeholder="Ask a follow-up question..."
+                                    disabled={isLoading}
+                                />
+                                <button
+                                    className={styles.sendButton}
+                                    onClick={handleAskQuestion}
+                                    disabled={isLoading || !query.trim()}
+                                >
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                        <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Try Again Button (if failed) */}
+                        {!passed && (
+                            <button
+                                className={styles.tryAgainButton}
+                                onClick={resetQuestion}
+                                disabled={isLoading}
+                            >
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <path d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                    <path d="M9 12l2 2 4-4"/>
+                                </svg>
+                                Try Again
+                            </button>
+                        )}
                     </div>
                 )}
 
@@ -712,6 +850,7 @@ const VocabSpeakingProblemSets = () => {
                     <button 
                         className={styles.homeButton}
                         onClick={handleHomeNav}
+                        disabled={isLoading}
                     >
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                             <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>

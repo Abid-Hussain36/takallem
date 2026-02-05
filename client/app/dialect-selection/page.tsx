@@ -9,6 +9,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import DialectCard from "@/components/DialectCard";
 import styles from "./DialectSelection.module.css";
+import { useModules } from "@/context/ModulesContext";
 
 
 const DialectSelection = () => {
@@ -16,7 +17,8 @@ const DialectSelection = () => {
 
     const {resource, setResource} = useResource();
     const {userCourseProgress, setUserCourseProgress} = useUserCourseProgress();
-    const {user, setUser} = useUser();
+    const {setUser} = useUser();
+    const {setModules}  = useModules();
 
     const [isLoading, setIsLoading] = useState<boolean>(false)
     const [error, setError] = useState<string>("")
@@ -39,13 +41,24 @@ const DialectSelection = () => {
 
     const handleDialectSelection = async (dialect: DialectResponse) => {
         if(userCourseProgress!.curr_module === resource.number){
-            setIsLoading(true);
             const authToken = localStorage.getItem("token");
+
+            if (!authToken) {
+                setError("User is not authenticated");
+                setUser(null);
+                setUserCourseProgress(null);
+                setModules(null);
+                setResource(null);
+                router.replace("/login");
+                return;
+            }
             
             try {
+                setIsLoading(true);
+
                 // 1. Increment progress
                 const incrementUserCourseProgress = await fetch(
-                    `${process.env.NEXT_PUBLIC_SERVER_URL}/user-course-progress/curr_module/increment/${userCourseProgress!.id}`,
+                    `${process.env.NEXT_PUBLIC_SERVER_URL}/user-course-progress/curr-module/increment/${userCourseProgress!.id}`,
                     {
                         method: "PUT",
                         headers: {
@@ -76,9 +89,6 @@ const DialectSelection = () => {
                     const errorData = await setUserDialectResponse.json();
                     throw new Error(errorData.detail || "Failed to set user dialect")
                 }
-                
-                const newUserData = await setUserDialectResponse.json();
-                setUser(newUserData);
 
                 // 3. Set userCourseProgress dialect
                 const setUserCourseProgressDialectRequest: UpdateUserCourseProgressDialectRequest = {
@@ -102,8 +112,11 @@ const DialectSelection = () => {
                     const errorData = await setUserCourseProgressDialectResponse.json();
                     throw new Error(errorData.detail || "Failed to set userCourseProgress dialect")
                 }
-                
+
+                const newUserData = await setUserDialectResponse.json();
                 const newUserCourseProgressData = await setUserCourseProgressDialectResponse.json();
+
+                setUser(newUserData);
                 setUserCourseProgress(newUserCourseProgressData);
 
                 // Clear resource and navigate home
@@ -111,6 +124,7 @@ const DialectSelection = () => {
                 router.replace("/")
             } catch(err){
                 setError(err instanceof Error ? err.message : "Error in updating user dialect.");
+            } finally{
                 setIsLoading(false);
             }
         } else {

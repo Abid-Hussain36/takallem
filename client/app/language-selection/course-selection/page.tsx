@@ -2,7 +2,6 @@
 
 import CourseCard from "@/components/CourseCard";
 import { CourseResponse } from "@/types/response_models/CourseResponse";
-import { AvailableCourse } from "@/types/enums";
 import { useUser } from "@/context/UserContext";
 import { useUserCourseProgress } from "@/context/UserCourseProgressContext";
 import { useState, useEffect } from "react";
@@ -25,15 +24,16 @@ const CourseSelection = () => {
     const storedCourses = localStorage.getItem("languageCourses");
     if (storedCourses) {
       try {
-        const parsedCourses = JSON.parse(storedCourses);
+        const parsedCourses = JSON.parse(storedCourses) as CourseResponse[];
         setCourses(parsedCourses);
       } catch (err) {
         setError("Failed to load courses from localStorage");
+        router.back();
       }
     } else{
       router.back();
     }
-  }, []);
+  }, [router]);
 
   const handleBack = () => {
     if(localStorage.getItem("languageCourses")){
@@ -43,18 +43,23 @@ const CourseSelection = () => {
   }
 
   const handleCourseClick = async (course: CourseResponse) => {
-    setIsLoading(true);
     const token = localStorage.getItem("token");
 
-    if (!token) {
+    if (!token || !user) {
+      if(token){
+        localStorage.removeItem("token");
+      }
+
       setError("User is not authenticated");
-      setIsLoading(false);
       localStorage.removeItem("languageCourses");
       setUser(null);
       router.replace("/login");
+      return;
     }
 
     try {
+      setIsLoading(true);
+
       // 1. Updating the user's current course
       const userCourseUpdateResponse = await fetch(
       `${process.env.NEXT_PUBLIC_SERVER_URL}/user/current-course/${course.course_name}`,
@@ -91,7 +96,7 @@ const CourseSelection = () => {
 
       // 3. Creating a new UserCourseProgress for selected course
       const createUserCourseProgressRequest: CreateUserCourseProgressRequest = {
-        id: user!.id, 
+        id: user.id, 
         course: course.course_name,
         language: course.language,
         default_dialect: course.default_dialect, 
@@ -125,9 +130,9 @@ const CourseSelection = () => {
         localStorage.removeItem("languageCourses");
         router.replace("/");
       } else{
-        const userNull = user === null;
-        const progressNull = userCourseProgress === null;
-        const currCourseNull = user?.current_course === null;
+        const userNull = updatedUser === null;
+        const progressNull = createdUserCourseProgress === null;
+        const currCourseNull = updatedUser?.current_course === null;
         throw new Error(`Failed to set user's course data after API calls. user: ${userNull}, progress: ${progressNull}, course: ${currCourseNull}`)
       }
       

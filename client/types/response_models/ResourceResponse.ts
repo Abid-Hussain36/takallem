@@ -143,7 +143,8 @@ export interface VocabListeningProblemSetResponse {
 export interface VocabSpeakingProblemSetResponse {
     id: number;
     problem_count: number;
-    gender: Gender;
+    gender: Gender | null;
+    dialect: AvailableDialect | null;
     problems: VocabSpeakingProblemResponse[];
 }
 
@@ -258,8 +259,6 @@ export interface VocabListeningProblemSetsResponse extends BaseResource {
 
 export interface VocabSpeakingProblemSetsResponse extends BaseResource {
     resource_type: ResourceType.VOCAB_SPEAKING_PROBLEM_SETS;
-    set_limit: number;
-    dialect?: AvailableDialect | null;
     problem_sets: VocabSpeakingProblemSetResponse[];
 }
 

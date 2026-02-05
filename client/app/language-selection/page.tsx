@@ -16,6 +16,10 @@ const LanguageSelection = () => {
   useEffect(() => {
     const getLanguages = async () => {
       try {
+        if(localStorage.getItem("languageCourses")){
+          localStorage.removeItem("languageCourses");
+        }
+        
         const languageResponse = await fetch(
           `${process.env.NEXT_PUBLIC_SERVER_URL}/languages`
         );
@@ -43,11 +47,8 @@ const LanguageSelection = () => {
   }, []);
 
   const handleLanguageSelect = (courses: CourseResponse[]) => {
-    // Store courses in localStorage to pass to course selection page
-    // sessionStorage only stores data for as long as the browser window or tab is open
-    // localStorage stores data forever, unless cookies are cleared
     localStorage.setItem("languageCourses", JSON.stringify(courses));
-    router.push("/language-selection/course-selection");
+    router.push('/language-selection/course-selection');
   };
 
   if (isLoading) {

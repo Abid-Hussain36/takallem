@@ -6,13 +6,17 @@ import styles from './VocabLecture.module.css';
 import { useRouter } from "next/navigation";
 import { useUserCourseProgress } from "@/context/UserCourseProgressContext";
 import { useState, useMemo, useRef } from "react";
+import { useUser } from "@/context/UserContext";
+import { useModules } from "@/context/ModulesContext";
 
 
 const VocabLecture = () => {
     const router = useRouter();
 
     const {resource, setResource} = useResource();
+    const {setUser} = useUser();
     const {userCourseProgress, setUserCourseProgress} = useUserCourseProgress();
+    const {setModules} = useModules();
 
     const [isLoading, setIsLoading] = useState<boolean>(false)
     const [error, setError] = useState<string>("")
@@ -27,10 +31,6 @@ const VocabLecture = () => {
         const lectureData = resource.resource as VocabLectureResponse;
         const userDialect = userCourseProgress?.dialect;
         
-        console.log("User dialect:", userDialect);
-        console.log("All vocab words:", lectureData.vocab_words);
-        console.log("Vocab word dialects:", lectureData.vocab_words.map(w => w.dialect));
-        
         if (!userDialect) {
             // If no dialect selected, show all words or words with null dialect
             return lectureData.vocab_words.filter(word => word.dialect === null);
@@ -44,7 +44,6 @@ const VocabLecture = () => {
                     word.dialect?.toUpperCase() === userDialect.toUpperCase()
         );
         
-        console.log("Filtered words:", filtered);
         return filtered;
     }, [resource?.resource, userCourseProgress?.dialect]);
 
@@ -61,12 +60,23 @@ const VocabLecture = () => {
 
     const handleNext = async () => {
         if(userCourseProgress?.curr_module === resource.number){
-            setIsLoading(true);
             const authToken = localStorage.getItem("token");
 
+            if (!authToken) {
+                setError("User is not authenticated");
+                setUser(null);
+                setUserCourseProgress(null);
+                setModules(null);
+                setResource(null);
+                router.replace("/login");
+                return;
+            }
+
             try {
+                setIsLoading(true);
+
                 const incrementUserCourseProgress = await fetch(
-                    `${process.env.NEXT_PUBLIC_SERVER_URL}/user-course-progress/curr_module/increment/${userCourseProgress.id}`,
+                    `${process.env.NEXT_PUBLIC_SERVER_URL}/user-course-progress/curr-module/increment/${userCourseProgress.id}`,
                     {
                         method: "PUT",
                         headers: {
@@ -106,7 +116,7 @@ const VocabLecture = () => {
             audioRef.current.src = word.vocab_audio;
             audioRef.current.play()
                 .then(() => setPlayingWordId(word.id))
-                .catch(err => setError("Failed to play audio"));
+                .catch(err => setError(err instanceof Error ? err.message : "Failed to play audio."));
         }
     }
 

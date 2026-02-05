@@ -2,7 +2,7 @@
 
 import { useResource } from "@/context/ResourceContext";
 import { PolymorphicResource } from "@/types/response_models/ResourceResponse";
-import { useParams } from "next/navigation"
+import { useParams, useRouter } from "next/navigation"
 import { useEffect, useState } from "react";
 import { ResourceType } from "@/types/enums";
 
@@ -22,23 +22,42 @@ import DialectSelection from "@/app/dialect-selection/page";
 import DictationProblemSet from "@/app/dictation-problem-set/page";
 import DiscriminationProblemSet from "@/app/discrimination-problem-set/page";
 import LetterJoiningProblemSet from "@/app/letter-joining-problem-set/page";
+import { useUser } from "@/context/UserContext";
+import { useUserCourseProgress } from "@/context/UserCourseProgressContext";
+import { useModules } from "@/context/ModulesContext";
 
 
 const Resource = () => {
     const params = useParams();
     const resourceId = params.id;
 
+    const {setUser} = useUser();
+    const {setUserCourseProgress} = useUserCourseProgress();
+    const {setModules} = useModules();
     const {resource, setResource} = useResource();
 
     const [isLoading, setIsLoading] = useState<boolean>(false);
-    const [error, setError] = useState<string>("")
+    const [error, setError] = useState<string>("");
+
+    const router = useRouter();
 
     useEffect(() => {
         const getResource = async () => {
-            setIsLoading(true);
             const authToken = localStorage.getItem("token");
 
+            if (!authToken) {
+                setError("User is not authenticated");
+                setUser(null);
+                setUserCourseProgress(null);
+                setModules(null);
+                setResource(null);
+                router.replace("/login");
+                return;
+            }
+
             try{
+                setIsLoading(true);
+
                 const resourceResponse = await fetch(
                     `${process.env.NEXT_PUBLIC_SERVER_URL}/resource/${resourceId}`,
                     {
@@ -68,7 +87,7 @@ const Resource = () => {
         }
 
         getResource();
-    }, [])
+    }, [resource])
 
     // Render appropriate component based on resource type
     const renderResourcePage = () => {

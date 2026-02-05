@@ -3,7 +3,7 @@ from sqlalchemy import Enum, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.db.database import Base
 from app.models.db.problem_set.vocab_speaking_problem_set_response import VocabSpeakingProblemSetResponse
-from app.db.enums import Gender
+from app.db.enums import AvailableDialect, Gender
 
 
 class VocabSpeakingProblemSet(Base):
@@ -14,7 +14,8 @@ class VocabSpeakingProblemSet(Base):
     collection_id: Mapped[int] = mapped_column(ForeignKey("vocab_speaking_problem_sets_collection.id", ondelete="CASCADE"))
 
     problem_count: Mapped[int] = mapped_column()
-    gender: Mapped[Gender] = mapped_column(Enum(Gender))
+    gender: Mapped[Gender | None] = mapped_column(Enum(Gender))
+    dialect: Mapped[AvailableDialect | None] = mapped_column(Enum(AvailableDialect))
 
     # Relationships
     collection: Mapped["VocabSpeakingProblemSets"] = relationship(back_populates="problem_sets")
@@ -28,5 +29,6 @@ class VocabSpeakingProblemSet(Base):
             id=self.id,
             problem_count=self.problem_count,
             gender=self.gender,
+            dialect=self.dialect,
             problems=[p.to_model() for p in self.problems]
         )

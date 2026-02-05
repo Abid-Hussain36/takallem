@@ -1,3 +1,5 @@
+'use client'
+
 import { useResource } from "@/context/ResourceContext"
 import { useUserCourseProgress } from "@/context/UserCourseProgressContext";
 import { VocabListeningProblemSetsResponse } from "@/types/response_models/ResourceResponse";
@@ -7,13 +9,17 @@ import { useState, useEffect, useRef } from "react";
 import IncrementCurrentVocabProblemSetRequest from "@/types/request_models/IncrementCurrentVocabProblemSetRequest";
 import styles from './VocabListeningProblemSets.module.css';
 import { UserCourseProgressResponse } from "@/types/response_models/UserCourseProgressResponse";
+import { useUser } from "@/context/UserContext";
+import { useModules } from "@/context/ModulesContext";
 
 type ProgressStatus = 'unanswered' | 'current' | 'correct' | 'incorrect';
 
 const VocabListeningProblemSets = () => {
     const router = useRouter();
 
+    const {setUser} = useUser();
     const {userCourseProgress, setUserCourseProgress} = useUserCourseProgress();
+    const {setModules} = useModules();
     const {resource, setResource} = useResource();
     
     const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -44,13 +50,6 @@ const VocabListeningProblemSets = () => {
     // VocabListeningSets Data
     const vocabListeningProblemSetsData = resource.resource as VocabListeningProblemSetsResponse;
     const problemSetLimit = vocabListeningProblemSetsData.set_limit;
-    
-    // Debug logging
-    console.log("Current vocab problem set index:", currVPS);
-    console.log("Total problem sets available:", vocabListeningProblemSetsData.problem_sets.length);
-    console.log("All problem sets:", vocabListeningProblemSetsData.problem_sets);
-    console.log("Trying to access index:", currVPS - 1);
-    
     const vocabListeningProblemSetData = vocabListeningProblemSetsData.problem_sets[currVPS - 1];
     
     // Safety check: ensure the problem set exists
@@ -73,13 +72,7 @@ const VocabListeningProblemSets = () => {
     const audioUrl: string = problem.vocab_word.vocab_audio;
     
     // Stopping Variables
-    const vocabListeningProblemSetLength = vocabListeningProblemSetData.problem_count;
-    const problemCounterStop = vocabListeningProblemSetLength;  // Fixed: not * 2
-
-    console.log("Problem count:", vocabListeningProblemSetLength);
-    console.log("Current problem counter:", problemCounter);
-    console.log("Problem counter stop (target):", problemCounterStop);
-    console.log("Exercise complete:", problemCounter === problemCounterStop);
+    const problemCounterStop = vocabListeningProblemSetData.problem_count;
 
     // End Booleans
     const atSetEnd = currProblemIdx === problems.length - 1;
@@ -87,6 +80,18 @@ const VocabListeningProblemSets = () => {
 
     // Initialize progress status when component mounts or problem set changes
     useEffect(() => {
+        const authToken = localStorage.getItem("token");
+
+        if (!authToken) {
+            setError("User is not authenticated");
+            setUser(null);
+            setUserCourseProgress(null);
+            setModules(null);
+            setResource(null);
+            router.replace("/login");
+            return;
+        }
+
         const initialStatus: ProgressStatus[] = problems.map((_, idx) => 
             idx === 0 ? 'current' : 'unanswered'
         );
@@ -95,16 +100,7 @@ const VocabListeningProblemSets = () => {
         setSelectedAnswer(null);
         setAnswered(false);
         setIsPlaying(false);
-    }, [currVPS]);
-
-    // Update current problem indicator
-    useEffect(() => {
-        if (progressStatus.length > 0 && !answered) {
-            const newStatus = [...progressStatus];
-            newStatus[currProblemIdx] = 'current';
-            setProgressStatus(newStatus);
-        }
-    }, [currProblemIdx, answered]);
+    }, []);
 
     // Handle audio playback - simple play button (no pause toggle)
     const handlePlayAudio = () => {
@@ -116,7 +112,7 @@ const VocabListeningProblemSets = () => {
             // Play the audio
             audioRef.current.play()
                 .then(() => setIsPlaying(true))
-                .catch(err => console.error("Failed to play audio:", err));
+                .catch(err => setError(err instanceof Error ? err.message : "Failed to play audio."));
         }
     };
 
@@ -172,11 +168,8 @@ const VocabListeningProblemSets = () => {
                     word: choice
                 }
                 
-                console.log("Adding word to covered_words:", choice);
-                console.log("Request payload:", addToCoveredWordsRequest);
-                
                 const addToCoveredWordsResponse = await fetch(
-                    `${process.env.NEXT_PUBLIC_SERVER_URL}/user-course-progress/covered_words`,
+                    `${process.env.NEXT_PUBLIC_SERVER_URL}/user-course-progress/covered-words`,
                     {
                         method: "PUT",
                         headers: {
@@ -187,19 +180,13 @@ const VocabListeningProblemSets = () => {
                     }
                 )
 
-                console.log("Response status:", addToCoveredWordsResponse.status);
-
                 if(!addToCoveredWordsResponse.ok){
                     const errorData = await addToCoveredWordsResponse.json();
-                    console.error("Error response:", errorData);
                     throw new Error(errorData.detail || "Failed to add to covered words")
                 }
 
                 // Backend now returns full updated UserCourseProgress (including covered_words and problem_counter)
                 const updatedUserCourseProgress = await addToCoveredWordsResponse.json();
-                console.log("Updated progress:", updatedUserCourseProgress);
-                console.log("Covered words:", updatedUserCourseProgress.covered_words);
-                console.log("Problem counter:", updatedUserCourseProgress.problem_counter);
                 setUserCourseProgress(updatedUserCourseProgress);
             } catch(err){
                 setError(err instanceof Error ? err.message : "Error in handling correct user answer selection.");
@@ -210,22 +197,16 @@ const VocabListeningProblemSets = () => {
     }
 
     const handleNext = async () => {
-        console.log("=== handleNext called ===");
-        console.log("atSetEnd:", atSetEnd);
-        console.log("exerciseComplete:", exerciseComplete);
-        console.log("problemCounter:", problemCounter);
-        console.log("problemCounterStop:", problemCounterStop);
-        console.log("currProblemIdx:", currProblemIdx);
-        console.log("problems.length:", problems.length);
-        
         if(atSetEnd && exerciseComplete){
-            setIsLoading(true);
+            // We have finished the exercise
             const authToken = localStorage.getItem("token");
 
             try {
+                setIsLoading(true);
+
                 // 1. Reset Problem Counter
                 const clearProblemCounterResponse = await fetch(
-                    `${process.env.NEXT_PUBLIC_SERVER_URL}/user-course-progress/problem_counter/clear/${userCourseProgress!.id}`,
+                    `${process.env.NEXT_PUBLIC_SERVER_URL}/user-course-progress/problem-counter/clear/${userCourseProgress!.id}`,
                     {
                         method: "PUT",
                         headers: {
@@ -242,7 +223,7 @@ const VocabListeningProblemSets = () => {
 
                 // 2. Reset Covered Words
                 const clearCoveredWordsResponse = await fetch(
-                    `${process.env.NEXT_PUBLIC_SERVER_URL}/user-course-progress/covered_words/clear/${userCourseProgress!.id}`,
+                    `${process.env.NEXT_PUBLIC_SERVER_URL}/user-course-progress/covered-words/clear/${userCourseProgress!.id}`,
                     {
                         method: "PUT",
                         headers: {
@@ -259,7 +240,7 @@ const VocabListeningProblemSets = () => {
 
                 // 3. Reset Set Counter
                 const clearSetCounterResponse = await fetch(
-                    `${process.env.NEXT_PUBLIC_SERVER_URL}/user-course-progress/current_vocab_problem_set/clear/${userCourseProgress!.id}`,
+                    `${process.env.NEXT_PUBLIC_SERVER_URL}/user-course-progress/current-vocab-problem-set/clear/${userCourseProgress!.id}`,
                     {
                         method: "PUT",
                         headers: {
@@ -277,7 +258,7 @@ const VocabListeningProblemSets = () => {
                 // 4. Increment current module if necessary
                 if(userCourseProgress?.curr_module === resource.number){
                     const incrementUserCourseProgress = await fetch(
-                        `${process.env.NEXT_PUBLIC_SERVER_URL}/user-course-progress/curr_module/increment/${userCourseProgress.id}`,
+                        `${process.env.NEXT_PUBLIC_SERVER_URL}/user-course-progress/curr-module/increment/${userCourseProgress.id}`,
                         {
                             method: "PUT",
                             headers: {
@@ -294,24 +275,29 @@ const VocabListeningProblemSets = () => {
 
                     const updatedProgress = await incrementUserCourseProgress.json();
                     setUserCourseProgress(updatedProgress);
+
+                    setResource(null);
+                    router.replace("/");
                 } else {
                     // If we didn't increment module, update with the cleared progress from the last response
                     const finalProgress = await clearSetCounterResponse.json();
                     setUserCourseProgress(finalProgress);
-                }
 
-                setResource(null);
-                router.replace("/");
+                    setResource(null);
+                    router.replace("/");
+                }
             } catch(err){
                 setError(err instanceof Error ? err.message : "Error in resetting progress counters.");
             } finally{
                 setIsLoading(false);
             }
         } else if(atSetEnd && !exerciseComplete) {
-            setIsLoading(true);
+            // We haven't finished the exercise but need to get the next problem set
             const authToken = localStorage.getItem("token");
 
             try{
+                setIsLoading(true);
+
                 // Get the next problem set
                 const incrementCurrentVocabProblemSetRequest: IncrementCurrentVocabProblemSetRequest = {
                     id: userCourseProgress!.id,
@@ -319,7 +305,7 @@ const VocabListeningProblemSets = () => {
                 }
 
                 const incrementCurrentVocabProblemSetResponse = await fetch(
-                    `${process.env.NEXT_PUBLIC_SERVER_URL}/user-course-progress/current_vocab_problem_set/increment`,
+                    `${process.env.NEXT_PUBLIC_SERVER_URL}/user-course-progress/current-vocab-problem-set/increment`,
                     {
                         method: "PUT",
                         headers: {
@@ -340,6 +326,7 @@ const VocabListeningProblemSets = () => {
                 const problemSetIdx = updatedUserCourseProgress.current_vocab_problem_set - 1; // Convert to 0-based index
                 const problemsCount = vocabListeningProblemSetsData.problem_sets[problemSetIdx].problem_count
                 const newStatus = Array(problemsCount).fill("unanswered") as ProgressStatus[];
+                newStatus[0] = "current";
 
                 setProgressStatus(newStatus);
                 setUserCourseProgress(updatedUserCourseProgress);
@@ -352,7 +339,12 @@ const VocabListeningProblemSets = () => {
                 setIsLoading(false);
             }
         } else{
-            setCurrProblemIdx(currProblemIdx + 1);
+            // Incrementing the curr problem and setting progress status.
+            const newIdx = currProblemIdx + 1;
+            const newStatus = [...progressStatus];
+            newStatus[newIdx] = "current";
+            setProgressStatus(newStatus);
+            setCurrProblemIdx(newIdx);
             setAnswered(false);
             setSelectedAnswer(null);
         }        
@@ -462,7 +454,7 @@ const VocabListeningProblemSets = () => {
                         Home
                     </button>
                     <button
-                        className={`${styles.nextButton} ${atSetEnd && exerciseComplete ? styles.complete : ''}`}
+                        className={`${styles.nextButton} ${(atSetEnd && exerciseComplete) ? styles.complete : ''}`}
                         onClick={handleNext}
                         disabled={!answered || isLoading}
                     >
